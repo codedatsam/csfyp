@@ -8,26 +8,34 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  password         String
-  firstName        String         @map("first_name")
-  lastName         String         @map("last_name")
-  phone            String?
-  role             UserRole       @default(CLIENT)
-  location         String?
-  isActive         Boolean        @default(true) @map("is_active")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
-  bookingsAsClient Booking[]      @relation("ClientBookings")
-  chatHistory      ChatHistory[]
-  notifications    Notification[]
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String?
+  role      UserRole @default(CLIENT)
+  location  String?
+  isActive  Boolean  @default(true) @map("is_active")
+  
+  // Password reset fields - ADD THESE
+  resetToken          String?   @map("reset_token")
+  resetTokenExpiry    DateTime? @map("reset_token_expiry")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
   provider         Provider?
+  bookingsAsClient Booking[]        @relation("ClientBookings")
   reviews          Review[]
+  notifications    Notification[]
+  chatHistory      ChatHistory[]
 
   @@index([email])
   @@index([role])
   @@index([isActive])
+  @@index([resetToken]) // ADD THIS INDEX
   @@map("users")
 }
 

@@ -15,7 +15,10 @@ const {
   getProfile,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  requestPasswordReset,
+  resetPassword,
+  verifyResetToken
 } = require('../controllers/authController');
 
 // Middleware
@@ -24,7 +27,9 @@ const {
   registerValidation,
   loginValidation,
   updateProfileValidation,
-  changePasswordValidation
+  changePasswordValidation,
+  requestPasswordResetValidation,
+  resetPasswordValidation
 } = require('../middleware/validation');
 
 // ==========================================
@@ -40,6 +45,25 @@ router.post('/register', registerValidation, register);
 // @desc    Login user
 // @access  Public
 router.post('/login', loginValidation, login);
+
+// ==========================================
+// PASSWORD RESET ROUTES (Public)
+// ==========================================
+
+// @route   POST /api/v1/auth/forgot-password
+// @desc    Request password reset (sends email with token)
+// @access  Public
+router.post('/forgot-password', requestPasswordResetValidation, requestPasswordReset);
+
+// @route   GET /api/v1/auth/verify-reset-token/:token
+// @desc    Verify if reset token is valid
+// @access  Public
+router.get('/verify-reset-token/:token', verifyResetToken);
+
+// @route   POST /api/v1/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', resetPasswordValidation, resetPassword);
 
 // ==========================================
 // PROTECTED ROUTES (Authentication required)

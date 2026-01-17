@@ -133,10 +133,45 @@ const changePasswordValidation = [
   handleValidationErrors
 ];
 
+// Request password reset validation
+const requestPasswordResetValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  handleValidationErrors
+];
+
+// Reset password validation
+const resetPasswordValidation = [
+  body('token')
+    .notEmpty()
+    .withMessage('Reset token is required'),
+  
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('New password must be at least 8 characters long')
+    .matches(/[A-Z]/)
+    .withMessage('New password must contain at least one uppercase letter')
+    .matches(/[a-z]/)
+    .withMessage('New password must contain at least one lowercase letter')
+    .matches(/[0-9]/)
+    .withMessage('New password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/)
+    .withMessage('New password must contain at least one special character'),
+  
+  handleValidationErrors
+];
+
+
+
 module.exports = {
   registerValidation,
   loginValidation,
   updateProfileValidation,
   changePasswordValidation,
+  requestPasswordResetValidation,
+  resetPasswordValidation,
   handleValidationErrors
 };

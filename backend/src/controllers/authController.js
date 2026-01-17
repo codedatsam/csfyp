@@ -16,6 +16,7 @@ const {
   conflictResponse,
   serverErrorResponse
 } = require('../utils/response');
+const { generateResetToken, generateTokenExpiry, isTokenExpired } = require('../utils/token');
 
 // ==========================================
 // REGISTER NEW USER
@@ -279,11 +280,162 @@ function logout(req, res) {
   return okResponse(res, 'Logged out successfully. Please delete your token.');
 }
 
+// ==========================================
+// REQUEST PASSWORD RESET
+// ==========================================
+async function requestPasswordReset(req, res) {
+  try {
+    const { email } = req.body;
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, firstName: true }
+    });
+
+    // Don't reveal if user exists or not (security)
+    if (!user) {
+      return okResponse(
+        res, 
+        'If that email exists, a password reset link has been sent'
+      );
+    }
+
+    // Generate reset token
+    const resetToken = generateResetToken();
+    const resetTokenExpiry = generateTokenExpiry();
+
+    // Save token to database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken,
+        resetTokenExpiry
+      }
+    });
+
+    // In production, send email with reset link
+    // For now, we'll just return the token (for testing)
+    console.log(`\n🔐 PASSWORD RESET TOKEN for ${email}:`);
+    console.log(`Token: ${resetToken}`);
+    console.log(`Reset URL: http://localhost:5173/reset-password?token=${resetToken}`);
+    console.log(`Expires: ${resetTokenExpiry}\n`);
+
+    // TODO: Send email with reset link
+    // await sendPasswordResetEmail(user.email, resetToken);
+
+    return okResponse(
+      res,
+      'If that email exists, a password reset link has been sent',
+      {
+        // Only in development - remove in production!
+        ...(process.env.NODE_ENV === 'development' && {
+          resetToken,
+          resetUrl: `http://localhost:5173/reset-password?token=${resetToken}`
+        })
+      }
+    );
+
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    return serverErrorResponse(res, 'Failed to process password reset request');
+  }
+}
+
+// ==========================================
+// RESET PASSWORD
+// ==========================================
+async function resetPassword(req, res) {
+  try {
+    const { token, newPassword } = req.body;
+
+    // Find user with valid reset token
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: {
+          gt: new Date() // Token not expired
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        resetTokenExpiry: true
+      }
+    });
+
+    if (!user) {
+      return badRequestResponse(
+        res,
+        'Invalid or expired reset token. Please request a new password reset.'
+      );
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      }
+    });
+
+    console.log(`✅ Password reset successful: ${user.email}`);
+
+    return okResponse(res, 'Password reset successful. You can now log in with your new password.');
+
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return serverErrorResponse(res, 'Failed to reset password');
+  }
+}
+
+// ==========================================
+// VERIFY RESET TOKEN
+// ==========================================
+async function verifyResetToken(req, res) {
+  try {
+    const { token } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: {
+          gt: new Date()
+        }
+      },
+      select: {
+        id: true,
+        email: true
+      }
+    });
+
+    if (!user) {
+      return badRequestResponse(res, 'Invalid or expired reset token');
+    }
+
+    return okResponse(res, 'Token is valid', {
+      email: user.email
+    });
+
+  } catch (error) {
+    console.error('Verify token error:', error);
+    return serverErrorResponse(res, 'Failed to verify token');
+  }
+}
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  requestPasswordReset,
+  resetPassword,
+  verifyResetToken
 };
