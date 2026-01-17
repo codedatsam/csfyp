@@ -32,7 +32,7 @@ BSc Computer Science - Final Year Project
 University of Hertfordshire
 
 ## 📅 Project Timeline
-- **Start Date:** November 2024
+- **Start Date:** November 2025
 - **Duration:** 10 Weeks
 - **Supervisor:** Dr. Barry Nichols
 
