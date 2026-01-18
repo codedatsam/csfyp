@@ -74,7 +74,15 @@ function Login() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.error || 'Login failed. Please try again.');
+      
+      // Check if it's an unverified email error
+      if (error.error && error.error.includes('verify your email')) {
+        toast.error('Please verify your email first');
+        // Redirect to verification page
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      } else {
+        toast.error(error.error || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

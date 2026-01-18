@@ -22,8 +22,21 @@ function isTokenExpired(expiryDate) {
   return new Date() > new Date(expiryDate);
 }
 
+// Generate verification token (longer for URL safety)
+function generateVerificationToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Generate verification expiry (24 hours from now)
+function generateVerificationExpiry() {
+  return new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+}
+
+
 module.exports = {
   generateResetToken,
   generateTokenExpiry,
-  isTokenExpired
+  isTokenExpired,
+  generateVerificationToken,
+  generateVerificationExpiry
 };

@@ -164,6 +164,41 @@ const resetPasswordValidation = [
   handleValidationErrors
 ];
 
+// Email verification validation
+const verifyEmailValidation = [
+  body('token')
+    .notEmpty()
+    .withMessage('Verification token is required'),
+  
+  handleValidationErrors
+];
+
+// Verify by code validation
+const verifyCodeValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  body('code')
+    .notEmpty()
+    .withMessage('Verification code is required')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 characters'),
+  
+  handleValidationErrors
+];
+
+// Resend verification validation
+const resendVerificationValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  
+  handleValidationErrors
+];
+
 
 
 module.exports = {
@@ -173,5 +208,8 @@ module.exports = {
   changePasswordValidation,
   requestPasswordResetValidation,
   resetPasswordValidation,
+  verifyEmailValidation,
+  verifyCodeValidation,
+  resendVerificationValidation,
   handleValidationErrors
 };

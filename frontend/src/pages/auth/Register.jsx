@@ -10,10 +10,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { UserPlus, Mail, Lock, User, Phone, MapPin, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 
 function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  // const { register } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -106,17 +107,17 @@ function Register() {
       // Remove confirmPassword before sending
       const { confirmPassword, ...registrationData } = formData;
       
-      const response = await register(registrationData);
+      const response = await api.post('/auth/register', registrationData);
       
       if (response.success) {
-        toast.success('Registration successful! Welcome to Hustleflow! 🎉');
-        navigate('/dashboard');
+        toast.success('Registration successful! Please check your email to verify your account.');
+        // Redirect to verify email page with email pre-filled
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (error) {
       console.error('Registration error:', error);
       
       if (error.errors && Array.isArray(error.errors)) {
-        // Display validation errors from backend
         error.errors.forEach(err => {
           toast.error(err.message);
         });
@@ -134,13 +135,13 @@ function Register() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            Hustleflow
+            husleflow
           </h1>
           <h2 className="text-3xl font-bold text-gray-900">
             Create Your Account
           </h2>
           <p className="mt-2 text-gray-600">
-            Join Hustleflow and start booking services today
+            Join husleflow and start booking services today
           </p>
         </div>
 

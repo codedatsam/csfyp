@@ -9,6 +9,8 @@ const express = require('express');
 const router = express.Router();
 
 // Controllers
+const { sendTestEmail } = require('../services/emailService');
+const { authenticate } = require('../middleware/auth');
 const {
   register,
   login,
@@ -18,18 +20,22 @@ const {
   logout,
   requestPasswordReset,
   resetPassword,
-  verifyResetToken
+  verifyResetToken,
+  verifyEmail,
+  verifyEmailByCode,
+  resendVerificationEmail
 } = require('../controllers/authController');
 
-// Middleware
-const { authenticate } = require('../middleware/auth');
 const {
   registerValidation,
   loginValidation,
   updateProfileValidation,
   changePasswordValidation,
   requestPasswordResetValidation,
-  resetPasswordValidation
+  resetPasswordValidation,
+  verifyEmailValidation,
+  verifyCodeValidation,
+  resendVerificationValidation
 } = require('../middleware/validation');
 
 // ==========================================
@@ -89,4 +95,46 @@ router.post('/change-password', authenticate, changePasswordValidation, changePa
 // @access  Private
 router.post('/logout', authenticate, logout);
 
+
+// @route   POST /api/v1/auth/test-email
+// @desc    Send test email (development only)
+// @access  Public (remove in production)
+router.post('/test-email', async (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ success: false, error: 'Not allowed in production' });
+  }
+  
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ success: false, error: 'Email is required' });
+  }
+  
+  const result = await sendTestEmail(email);
+  
+  if (result.success) {
+    return res.json({ success: true, message: 'Test email sent!', data: result.data });
+  } else {
+    return res.status(500).json({ success: false, error: result.error });
+  }
+});
+
+// ==========================================
+// EMAIL VERIFICATION ROUTES (Public)
+// ==========================================
+
+// @route   POST /api/v1/auth/verify-email
+// @desc    Verify email with token (from link)
+// @access  Public
+router.post('/verify-email', verifyEmailValidation, verifyEmail);
+
+// @route   POST /api/v1/auth/verify-code
+// @desc    Verify email with 6-digit code
+// @access  Public
+router.post('/verify-code', verifyCodeValidation, verifyEmailByCode);
+
+// @route   POST /api/v1/auth/resend-verification
+// @desc    Resend verification email
+// @access  Public
+router.post('/resend-verification', resendVerificationValidation, resendVerificationEmail);
 module.exports = router;

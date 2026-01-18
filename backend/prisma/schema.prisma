@@ -18,7 +18,12 @@ model User {
   location  String?
   isActive  Boolean  @default(true) @map("is_active")
   
-  // Password reset fields - ADD THESE
+  // Email verification fields - ADD THESE
+  isEmailVerified       Boolean   @default(false) @map("is_email_verified")
+  emailVerificationToken String?  @map("email_verification_token")
+  emailVerificationExpiry DateTime? @map("email_verification_expiry")
+  
+  // Password reset fields
   resetToken          String?   @map("reset_token")
   resetTokenExpiry    DateTime? @map("reset_token_expiry")
   
@@ -35,7 +40,8 @@ model User {
   @@index([email])
   @@index([role])
   @@index([isActive])
-  @@index([resetToken]) // ADD THIS INDEX
+  @@index([resetToken])
+  @@index([emailVerificationToken])
   @@map("users")
 }
 

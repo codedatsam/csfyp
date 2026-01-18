@@ -7,6 +7,7 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import VerifyEmail from './pages/auth/VerifyEmail';
 
 // Pages
 import Home from './pages/Home';
@@ -24,38 +25,42 @@ function App() {
 
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route 
-        path="/" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />} 
-      />
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
-      />
-      <Route 
-        path="/register" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
-      />
+  {/* Public Routes */}
+  <Route 
+    path="/" 
+    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />} 
+  />
+  <Route 
+    path="/login" 
+    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+  />
+  <Route 
+    path="/register" 
+    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
+  />
+  
+  {/* Email Verification */}
+  <Route path="/verify-email" element={<VerifyEmail />} />
+  
+  {/* Password Reset Routes */}
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Password Reset Routes */}
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+  {/* Protected Routes */}
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    }
+  />
 
+  {/* 404 */}
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* 404 - Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    
   );
 }
 
