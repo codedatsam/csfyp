@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { UserPlus, Mail, Lock, User, Phone, MapPin, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Phone, MapPin, Loader2, Sparkles, Heart, Coffee } from 'lucide-react';
 import api from '../../services/api';
 
 function Register() {
@@ -135,53 +135,64 @@ function Register() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            husleflow
+            Husleflow
           </h1>
           <h2 className="text-3xl font-bold text-gray-900">
-            Create Your Account
+            Join the Campus Hustle
           </h2>
           <p className="mt-2 text-gray-600">
-            Join husleflow and start booking services today
+            Buy and sell services with fellow students — all in one place
           </p>
         </div>
 
         {/* Registration Form */}
         <div className="bg-white rounded-lg shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Role Selection */}
+            {/* Role Selection - Unified */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                I want to
+                What brings you to Husleflow?
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, role: 'CLIENT' }))}
-                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                  className={`p-4 border-2 rounded-lg text-left transition-all ${
                     formData.role === 'CLIENT'
                       ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
-                  <User className="h-6 w-6 mx-auto mb-2" />
-                  <div className="font-semibold">Book Services</div>
-                  <div className="text-xs text-gray-500">I'm a client</div>
+                  <div className="flex items-center">
+                    <User className="h-6 w-6 mr-3" />
+                    <div>
+                      <div className="font-semibold">I need services</div>
+                      <div className="text-xs text-gray-500">Find students to help with tutoring, errands, tech help & more</div>
+                    </div>
+                  </div>
                 </button>
                 
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, role: 'PROVIDER' }))}
-                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                  className={`p-4 border-2 rounded-lg text-left transition-all ${
                     formData.role === 'PROVIDER'
                       ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
-                  <UserPlus className="h-6 w-6 mx-auto mb-2" />
-                  <div className="font-semibold">Offer Services</div>
-                  <div className="text-xs text-gray-500">I'm a provider</div>
+                  <div className="flex items-center">
+                    <UserPlus className="h-6 w-6 mr-3" />
+                    <div>
+                      <div className="font-semibold">I want to earn</div>
+                      <div className="text-xs text-gray-500">Offer your skills and make money helping other students</div>
+                    </div>
+                  </div>
                 </button>
               </div>
+              <p className="text-xs text-gray-400 mt-2 text-center">
+                Don't worry — you can both buy and sell services once you're signed up!
+              </p>
             </div>
 
             {/* Name Fields */}
@@ -242,7 +253,7 @@ function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
-                  placeholder="you@example.com"
+                  placeholder="you@university.ac.uk"
                 />
               </div>
               {errors.email && (
@@ -327,7 +338,7 @@ function Register() {
               {/* Location */}
               <div>
                 <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  Location (Optional)
+                  Campus / Hall (Optional)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -340,7 +351,7 @@ function Register() {
                     value={formData.location}
                     onChange={handleChange}
                     className="input pl-10"
-                    placeholder="London, UK"
+                    placeholder="Main Campus, Block A"
                   />
                 </div>
               </div>
@@ -381,7 +392,7 @@ function Register() {
               ) : (
                 <>
                   <UserPlus className="h-5 w-5 mr-2" />
-                  Create Account
+                  Start Hustling
                 </>
               )}
             </button>
@@ -398,12 +409,23 @@ function Register() {
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500">
-          BSc Computer Science Final Year Project
-          <br />
-          University of Hertfordshire 
-        </p>
+        {/* Creative Footer */}
+        <footer className="text-center">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="flex items-center space-x-2 text-gray-500 text-sm">
+              <span>Made with</span>
+              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+              <span>&</span>
+              <Coffee className="h-3 w-3 text-amber-600" />
+              <span>by students, for students</span>
+            </div>
+            <div className="flex items-center space-x-1 text-primary-600 text-sm">
+              <Sparkles className="h-3 w-3" />
+              <span className="font-semibold">Husleflow</span>
+              <Sparkles className="h-3 w-3" />
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

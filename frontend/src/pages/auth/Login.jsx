@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
+import { LogIn, Mail, Lock, Loader2, Sparkles, Heart, Coffee } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
@@ -94,13 +94,13 @@ function Login() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            Hustleflow
+            Husleflow
           </h1>
           <h2 className="text-3xl font-bold text-gray-900">
             Welcome Back
           </h2>
           <p className="mt-2 text-gray-600">
-            Sign in to your account to continue
+            Sign in to continue your hustle
           </p>
         </div>
 
@@ -124,7 +124,7 @@ function Login() {
                   value={formData.email}
                   onChange={handleChange}
                   className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
-                  placeholder="you@example.com"
+                  placeholder="you@university.ac.uk"
                 />
               </div>
               {errors.email && (
@@ -203,18 +203,29 @@ function Login() {
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <Link to="/register" className="link font-semibold">
-                Sign up now
+                Join the hustle
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500">
-          BSc Computer Science Final Year Project
-          <br />
-          University of Hertfordshire 
-        </p>
+        {/* Creative Footer */}
+        <footer className="text-center">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="flex items-center space-x-2 text-gray-500 text-sm">
+              <span>Made with</span>
+              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+              <span>&</span>
+              <Coffee className="h-3 w-3 text-amber-600" />
+              <span>by students, for students</span>
+            </div>
+            <div className="flex items-center space-x-1 text-primary-600 text-sm">
+              <Sparkles className="h-3 w-3" />
+              <span className="font-semibold">Husleflow</span>
+              <Sparkles className="h-3 w-3" />
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

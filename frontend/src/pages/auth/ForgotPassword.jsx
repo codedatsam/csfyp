@@ -112,7 +112,7 @@ function ForgotPassword() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            Hustleflow
+            Husleflow
           </h1>
           <h2 className="text-3xl font-bold text-gray-900">
             Forgot Password?

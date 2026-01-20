@@ -181,7 +181,7 @@ function VerifyEmail() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            husleflow
+            Husleflow
           </h1>
           <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <Mail className="h-8 w-8 text-primary-600" />
@@ -309,7 +309,7 @@ function VerifyEmail() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-500">
-          University of Hertfordshire 
+          © 2026 Husleflow. Made by students, for students.
         </p>
       </div>
     </div>
