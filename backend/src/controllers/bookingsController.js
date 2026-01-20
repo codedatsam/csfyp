@@ -7,7 +7,13 @@
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { successResponse, errorResponse } = require('../utils/response');
+const { 
+  okResponse, 
+  createdResponse, 
+  badRequestResponse,
+  notFoundResponse,
+  serverErrorResponse 
+} = require('../utils/response');
 
 // ==========================================
 // CREATE BOOKING (Client only)
@@ -16,6 +22,11 @@ const createBooking = async (req, res) => {
   try {
     const clientId = req.user.id;
     const { serviceId, bookingDate, timeSlot, notes } = req.body;
+
+    // Validate required fields
+    if (!serviceId || !bookingDate || !timeSlot) {
+      return badRequestResponse(res, 'Service ID, booking date and time slot are required');
+    }
 
     // Get service and provider info
     const service = await prisma.service.findUnique({
@@ -30,16 +41,16 @@ const createBooking = async (req, res) => {
     });
 
     if (!service) {
-      return errorResponse(res, 'Service not found', 404);
+      return notFoundResponse(res, 'Service not found');
     }
 
     if (!service.isActive) {
-      return errorResponse(res, 'This service is no longer available', 400);
+      return badRequestResponse(res, 'This service is no longer available');
     }
 
     // Check if user is trying to book their own service
     if (service.provider.userId === clientId) {
-      return errorResponse(res, 'You cannot book your own service', 400);
+      return badRequestResponse(res, 'You cannot book your own service');
     }
 
     // Check for conflicting booking
@@ -53,7 +64,7 @@ const createBooking = async (req, res) => {
     });
 
     if (existingBooking) {
-      return errorResponse(res, 'This time slot is already booked', 400);
+      return badRequestResponse(res, 'This time slot is already booked');
     }
 
     // Create booking
@@ -65,7 +76,7 @@ const createBooking = async (req, res) => {
         bookingDate: new Date(bookingDate),
         timeSlot,
         totalPrice: service.price,
-        notes
+        notes: notes || ''
       },
       include: {
         service: true,
@@ -100,10 +111,10 @@ const createBooking = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Booking created successfully', { booking }, 201);
+    return createdResponse(res, 'Booking created successfully', { booking });
   } catch (error) {
     console.error('Create booking error:', error);
-    return errorResponse(res, 'Failed to create booking', 500);
+    return serverErrorResponse(res, 'Failed to create booking');
   }
 };
 
@@ -148,7 +159,7 @@ const getMyBookings = async (req, res) => {
       prisma.booking.count({ where })
     ]);
 
-    return successResponse(res, 'Bookings retrieved successfully', {
+    return okResponse(res, 'Bookings retrieved successfully', {
       bookings,
       pagination: {
         total,
@@ -159,7 +170,7 @@ const getMyBookings = async (req, res) => {
     });
   } catch (error) {
     console.error('Get my bookings error:', error);
-    return errorResponse(res, 'Failed to retrieve bookings', 500);
+    return serverErrorResponse(res, 'Failed to retrieve bookings');
   }
 };
 
@@ -176,7 +187,7 @@ const getProviderBookings = async (req, res) => {
     });
 
     if (!provider) {
-      return successResponse(res, 'No bookings found', { bookings: [] });
+      return okResponse(res, 'No bookings found', { bookings: [] });
     }
 
     const where = { providerId: provider.id };
@@ -209,7 +220,7 @@ const getProviderBookings = async (req, res) => {
       prisma.booking.count({ where })
     ]);
 
-    return successResponse(res, 'Provider bookings retrieved successfully', {
+    return okResponse(res, 'Provider bookings retrieved successfully', {
       bookings,
       pagination: {
         total,
@@ -220,7 +231,7 @@ const getProviderBookings = async (req, res) => {
     });
   } catch (error) {
     console.error('Get provider bookings error:', error);
-    return errorResponse(res, 'Failed to retrieve bookings', 500);
+    return serverErrorResponse(res, 'Failed to retrieve bookings');
   }
 };
 
@@ -262,7 +273,7 @@ const getBookingById = async (req, res) => {
     });
 
     if (!booking) {
-      return errorResponse(res, 'Booking not found', 404);
+      return notFoundResponse(res, 'Booking not found');
     }
 
     // Check if user is client or provider of this booking
@@ -271,13 +282,13 @@ const getBookingById = async (req, res) => {
     });
 
     if (booking.clientId !== userId && (!provider || booking.providerId !== provider.id)) {
-      return errorResponse(res, 'Unauthorized to view this booking', 403);
+      return notFoundResponse(res, 'Booking not found');
     }
 
-    return successResponse(res, 'Booking retrieved successfully', { booking });
+    return okResponse(res, 'Booking retrieved successfully', { booking });
   } catch (error) {
     console.error('Get booking by ID error:', error);
-    return errorResponse(res, 'Failed to retrieve booking', 500);
+    return serverErrorResponse(res, 'Failed to retrieve booking');
   }
 };
 
@@ -292,7 +303,7 @@ const updateBookingStatus = async (req, res) => {
 
     const validStatuses = ['CONFIRMED', 'COMPLETED', 'CANCELLED'];
     if (!validStatuses.includes(status)) {
-      return errorResponse(res, 'Invalid status', 400);
+      return badRequestResponse(res, 'Invalid status. Must be CONFIRMED, COMPLETED, or CANCELLED');
     }
 
     const provider = await prisma.provider.findUnique({
@@ -300,7 +311,7 @@ const updateBookingStatus = async (req, res) => {
     });
 
     if (!provider) {
-      return errorResponse(res, 'Provider profile not found', 404);
+      return notFoundResponse(res, 'Provider profile not found');
     }
 
     const booking = await prisma.booking.findFirst({
@@ -312,7 +323,7 @@ const updateBookingStatus = async (req, res) => {
     });
 
     if (!booking) {
-      return errorResponse(res, 'Booking not found or unauthorized', 404);
+      return notFoundResponse(res, 'Booking not found or unauthorized');
     }
 
     // Update booking status
@@ -349,10 +360,10 @@ const updateBookingStatus = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Booking status updated successfully', { booking: updatedBooking });
+    return okResponse(res, 'Booking status updated successfully', { booking: updatedBooking });
   } catch (error) {
     console.error('Update booking status error:', error);
-    return errorResponse(res, 'Failed to update booking status', 500);
+    return serverErrorResponse(res, 'Failed to update booking status');
   }
 };
 
@@ -375,15 +386,15 @@ const cancelBooking = async (req, res) => {
     });
 
     if (!booking) {
-      return errorResponse(res, 'Booking not found or unauthorized', 404);
+      return notFoundResponse(res, 'Booking not found or unauthorized');
     }
 
     if (booking.status === 'COMPLETED') {
-      return errorResponse(res, 'Cannot cancel a completed booking', 400);
+      return badRequestResponse(res, 'Cannot cancel a completed booking');
     }
 
     if (booking.status === 'CANCELLED') {
-      return errorResponse(res, 'Booking is already cancelled', 400);
+      return badRequestResponse(res, 'Booking is already cancelled');
     }
 
     // Update booking status
@@ -402,10 +413,10 @@ const cancelBooking = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Booking cancelled successfully', { booking: updatedBooking });
+    return okResponse(res, 'Booking cancelled successfully', { booking: updatedBooking });
   } catch (error) {
     console.error('Cancel booking error:', error);
-    return errorResponse(res, 'Failed to cancel booking', 500);
+    return serverErrorResponse(res, 'Failed to cancel booking');
   }
 };
 
@@ -417,7 +428,7 @@ const getAvailableSlots = async (req, res) => {
     const { providerId, date } = req.query;
 
     if (!providerId || !date) {
-      return errorResponse(res, 'Provider ID and date are required', 400);
+      return badRequestResponse(res, 'Provider ID and date are required');
     }
 
     const bookingDate = new Date(date);
@@ -462,7 +473,7 @@ const getAvailableSlots = async (req, res) => {
     // Filter out booked slots
     const freeSlots = availableSlots.filter(slot => !bookedSlots.includes(slot));
 
-    return successResponse(res, 'Available slots retrieved successfully', {
+    return okResponse(res, 'Available slots retrieved successfully', {
       date,
       dayOfWeek,
       availableSlots: freeSlots,
@@ -470,7 +481,7 @@ const getAvailableSlots = async (req, res) => {
     });
   } catch (error) {
     console.error('Get available slots error:', error);
-    return errorResponse(res, 'Failed to retrieve available slots', 500);
+    return serverErrorResponse(res, 'Failed to retrieve available slots');
   }
 };
 

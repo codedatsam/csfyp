@@ -7,28 +7,35 @@
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { successResponse, errorResponse } = require('../utils/response');
+const { 
+  okResponse, 
+  createdResponse, 
+  badRequestResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  serverErrorResponse 
+} = require('../utils/response');
 
 // ==========================================
-// CREATE SERVICE (Provider only)
+// CREATE SERVICE (Any authenticated user)
 // ==========================================
 const createService = async (req, res) => {
   try {
     const userId = req.user.id;
     const { serviceName, category, description, price, duration } = req.body;
 
-    // Check if user is a provider
-    if (req.user.role !== 'PROVIDER') {
-      return errorResponse(res, 'Only providers can create services', 403);
+    // Validate required fields
+    if (!serviceName || !category || !price || !duration) {
+      return badRequestResponse(res, 'Service name, category, price and duration are required');
     }
 
-    // Get or create provider profile
+    // Get or create provider profile (for any user who wants to offer services)
     let provider = await prisma.provider.findUnique({
       where: { userId }
     });
 
     if (!provider) {
-      // Create provider profile automatically
+      // Create provider profile automatically for any user
       provider = await prisma.provider.create({
         data: {
           userId,
@@ -44,7 +51,7 @@ const createService = async (req, res) => {
         providerId: provider.id,
         serviceName,
         category,
-        description,
+        description: description || '',
         price: parseFloat(price),
         duration: parseInt(duration)
       },
@@ -63,10 +70,10 @@ const createService = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Service created successfully', { service }, 201);
+    return createdResponse(res, 'Service created successfully', { service });
   } catch (error) {
     console.error('Create service error:', error);
-    return errorResponse(res, 'Failed to create service', 500);
+    return serverErrorResponse(res, 'Failed to create service');
   }
 };
 
@@ -83,7 +90,7 @@ const getAllServices = async (req, res) => {
       sortBy = 'createdAt',
       order = 'desc',
       page = 1,
-      limit = 10
+      limit = 12
     } = req.query;
 
     // Build filter conditions
@@ -137,7 +144,7 @@ const getAllServices = async (req, res) => {
       prisma.service.count({ where })
     ]);
 
-    return successResponse(res, 'Services retrieved successfully', {
+    return okResponse(res, 'Services retrieved successfully', {
       services,
       pagination: {
         total,
@@ -148,7 +155,7 @@ const getAllServices = async (req, res) => {
     });
   } catch (error) {
     console.error('Get all services error:', error);
-    return errorResponse(res, 'Failed to retrieve services', 500);
+    return serverErrorResponse(res, 'Failed to retrieve services');
   }
 };
 
@@ -190,13 +197,13 @@ const getServiceById = async (req, res) => {
     });
 
     if (!service) {
-      return errorResponse(res, 'Service not found', 404);
+      return notFoundResponse(res, 'Service not found');
     }
 
-    return successResponse(res, 'Service retrieved successfully', { service });
+    return okResponse(res, 'Service retrieved successfully', { service });
   } catch (error) {
     console.error('Get service by ID error:', error);
-    return errorResponse(res, 'Failed to retrieve service', 500);
+    return serverErrorResponse(res, 'Failed to retrieve service');
   }
 };
 
@@ -217,15 +224,15 @@ const getMyServices = async (req, res) => {
     });
 
     if (!provider) {
-      return successResponse(res, 'No services found', { services: [] });
+      return okResponse(res, 'No services found', { services: [] });
     }
 
-    return successResponse(res, 'My services retrieved successfully', { 
+    return okResponse(res, 'My services retrieved successfully', { 
       services: provider.services 
     });
   } catch (error) {
     console.error('Get my services error:', error);
-    return errorResponse(res, 'Failed to retrieve services', 500);
+    return serverErrorResponse(res, 'Failed to retrieve services');
   }
 };
 
@@ -244,7 +251,7 @@ const updateService = async (req, res) => {
     });
 
     if (!provider) {
-      return errorResponse(res, 'Provider profile not found', 404);
+      return notFoundResponse(res, 'Provider profile not found');
     }
 
     // Check if service belongs to this provider
@@ -253,7 +260,7 @@ const updateService = async (req, res) => {
     });
 
     if (!existingService) {
-      return errorResponse(res, 'Service not found or unauthorized', 404);
+      return notFoundResponse(res, 'Service not found or unauthorized');
     }
 
     // Update service
@@ -269,10 +276,10 @@ const updateService = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Service updated successfully', { service });
+    return okResponse(res, 'Service updated successfully', { service });
   } catch (error) {
     console.error('Update service error:', error);
-    return errorResponse(res, 'Failed to update service', 500);
+    return serverErrorResponse(res, 'Failed to update service');
   }
 };
 
@@ -290,7 +297,7 @@ const deleteService = async (req, res) => {
     });
 
     if (!provider) {
-      return errorResponse(res, 'Provider profile not found', 404);
+      return notFoundResponse(res, 'Provider profile not found');
     }
 
     // Check if service belongs to this provider
@@ -299,7 +306,7 @@ const deleteService = async (req, res) => {
     });
 
     if (!existingService) {
-      return errorResponse(res, 'Service not found or unauthorized', 404);
+      return notFoundResponse(res, 'Service not found or unauthorized');
     }
 
     // Soft delete - set isActive to false
@@ -308,10 +315,10 @@ const deleteService = async (req, res) => {
       data: { isActive: false }
     });
 
-    return successResponse(res, 'Service deleted successfully');
+    return okResponse(res, 'Service deleted successfully');
   } catch (error) {
     console.error('Delete service error:', error);
-    return errorResponse(res, 'Failed to delete service', 500);
+    return serverErrorResponse(res, 'Failed to delete service');
   }
 };
 
@@ -344,7 +351,7 @@ const getCategories = async (req, res) => {
       'Other'
     ];
 
-    return successResponse(res, 'Categories retrieved successfully', { 
+    return okResponse(res, 'Categories retrieved successfully', { 
       categories: categories.map(c => ({
         name: c.category,
         count: c._count.category
@@ -353,7 +360,7 @@ const getCategories = async (req, res) => {
     });
   } catch (error) {
     console.error('Get categories error:', error);
-    return errorResponse(res, 'Failed to retrieve categories', 500);
+    return serverErrorResponse(res, 'Failed to retrieve categories');
   }
 };
 

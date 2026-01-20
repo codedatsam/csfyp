@@ -156,13 +156,13 @@ function MyServices() {
     }
   };
 
-  if (user?.role !== 'PROVIDER') {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Provider Access Only</h2>
-          <p className="text-gray-600 mb-6">You need a provider account to offer services.</p>
-          <Link to="/dashboard" className="btn btn-primary">Back to Dashboard</Link>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Login</h2>
+          <p className="text-gray-600 mb-6">You need to be logged in to manage services.</p>
+          <Link to="/login" className="btn btn-primary">Login</Link>
         </div>
       </div>
     );

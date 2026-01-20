@@ -7,7 +7,14 @@
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { successResponse, errorResponse } = require('../utils/response');
+const { 
+  okResponse, 
+  createdResponse, 
+  badRequestResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  serverErrorResponse 
+} = require('../utils/response');
 
 // ==========================================
 // CREATE REVIEW (Client only, after booking completed)
@@ -17,9 +24,14 @@ const createReview = async (req, res) => {
     const clientId = req.user.id;
     const { bookingId, rating, comment } = req.body;
 
+    // Validate required fields
+    if (!bookingId || !rating) {
+      return badRequestResponse(res, 'Booking ID and rating are required');
+    }
+
     // Validate rating
     if (rating < 1 || rating > 5) {
-      return errorResponse(res, 'Rating must be between 1 and 5', 400);
+      return badRequestResponse(res, 'Rating must be between 1 and 5');
     }
 
     // Get booking
@@ -34,19 +46,19 @@ const createReview = async (req, res) => {
     });
 
     if (!booking) {
-      return errorResponse(res, 'Booking not found', 404);
+      return notFoundResponse(res, 'Booking not found');
     }
 
     if (booking.clientId !== clientId) {
-      return errorResponse(res, 'Unauthorized to review this booking', 403);
+      return forbiddenResponse(res, 'Unauthorized to review this booking');
     }
 
     if (booking.status !== 'COMPLETED') {
-      return errorResponse(res, 'Can only review completed bookings', 400);
+      return badRequestResponse(res, 'Can only review completed bookings');
     }
 
     if (booking.review) {
-      return errorResponse(res, 'You have already reviewed this booking', 400);
+      return badRequestResponse(res, 'You have already reviewed this booking');
     }
 
     // Create review
@@ -55,8 +67,8 @@ const createReview = async (req, res) => {
         bookingId,
         clientId,
         providerId: booking.providerId,
-        rating,
-        comment
+        rating: parseInt(rating),
+        comment: comment || ''
       },
       include: {
         client: {
@@ -92,10 +104,10 @@ const createReview = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Review created successfully', { review }, 201);
+    return createdResponse(res, 'Review created successfully', { review });
   } catch (error) {
     console.error('Create review error:', error);
-    return errorResponse(res, 'Failed to create review', 500);
+    return serverErrorResponse(res, 'Failed to create review');
   }
 };
 
@@ -149,7 +161,7 @@ const getProviderReviews = async (req, res) => {
       _count: { rating: true }
     });
 
-    return successResponse(res, 'Reviews retrieved successfully', {
+    return okResponse(res, 'Reviews retrieved successfully', {
       reviews,
       stats: {
         averageRating: stats._avg.rating || 0,
@@ -168,7 +180,7 @@ const getProviderReviews = async (req, res) => {
     });
   } catch (error) {
     console.error('Get provider reviews error:', error);
-    return errorResponse(res, 'Failed to retrieve reviews', 500);
+    return serverErrorResponse(res, 'Failed to retrieve reviews');
   }
 };
 
@@ -214,7 +226,7 @@ const getMyReviews = async (req, res) => {
       prisma.review.count({ where: { clientId } })
     ]);
 
-    return successResponse(res, 'My reviews retrieved successfully', {
+    return okResponse(res, 'My reviews retrieved successfully', {
       reviews,
       pagination: {
         total,
@@ -225,7 +237,7 @@ const getMyReviews = async (req, res) => {
     });
   } catch (error) {
     console.error('Get my reviews error:', error);
-    return errorResponse(res, 'Failed to retrieve reviews', 500);
+    return serverErrorResponse(res, 'Failed to retrieve reviews');
   }
 };
 
@@ -242,7 +254,7 @@ const getReviewsAboutMe = async (req, res) => {
     });
 
     if (!provider) {
-      return successResponse(res, 'No reviews found', { 
+      return okResponse(res, 'No reviews found', { 
         reviews: [],
         stats: { averageRating: 0, totalReviews: 0 }
       });
@@ -283,7 +295,7 @@ const getReviewsAboutMe = async (req, res) => {
       })
     ]);
 
-    return successResponse(res, 'Reviews about me retrieved successfully', {
+    return okResponse(res, 'Reviews about me retrieved successfully', {
       reviews,
       stats: {
         averageRating: stats._avg.rating || 0,
@@ -298,7 +310,7 @@ const getReviewsAboutMe = async (req, res) => {
     });
   } catch (error) {
     console.error('Get reviews about me error:', error);
-    return errorResponse(res, 'Failed to retrieve reviews', 500);
+    return serverErrorResponse(res, 'Failed to retrieve reviews');
   }
 };
 
@@ -316,18 +328,18 @@ const updateReview = async (req, res) => {
     });
 
     if (!review) {
-      return errorResponse(res, 'Review not found or unauthorized', 404);
+      return notFoundResponse(res, 'Review not found or unauthorized');
     }
 
     // Validate rating if provided
     if (rating && (rating < 1 || rating > 5)) {
-      return errorResponse(res, 'Rating must be between 1 and 5', 400);
+      return badRequestResponse(res, 'Rating must be between 1 and 5');
     }
 
     const updatedReview = await prisma.review.update({
       where: { id },
       data: {
-        ...(rating && { rating }),
+        ...(rating && { rating: parseInt(rating) }),
         ...(comment !== undefined && { comment })
       }
     });
@@ -345,10 +357,10 @@ const updateReview = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Review updated successfully', { review: updatedReview });
+    return okResponse(res, 'Review updated successfully', { review: updatedReview });
   } catch (error) {
     console.error('Update review error:', error);
-    return errorResponse(res, 'Failed to update review', 500);
+    return serverErrorResponse(res, 'Failed to update review');
   }
 };
 
@@ -365,7 +377,7 @@ const deleteReview = async (req, res) => {
     });
 
     if (!review) {
-      return errorResponse(res, 'Review not found or unauthorized', 404);
+      return notFoundResponse(res, 'Review not found or unauthorized');
     }
 
     await prisma.review.delete({
@@ -385,10 +397,10 @@ const deleteReview = async (req, res) => {
       }
     });
 
-    return successResponse(res, 'Review deleted successfully');
+    return okResponse(res, 'Review deleted successfully');
   } catch (error) {
     console.error('Delete review error:', error);
-    return errorResponse(res, 'Failed to delete review', 500);
+    return serverErrorResponse(res, 'Failed to delete review');
   }
 };
 

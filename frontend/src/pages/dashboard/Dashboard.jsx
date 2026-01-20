@@ -59,11 +59,9 @@ function Dashboard() {
               <Link to="/services" className="text-gray-600 hover:text-primary-600 font-medium">
                 Browse Services
               </Link>
-              {user?.role === 'PROVIDER' && (
-                <Link to="/dashboard/my-services" className="text-gray-600 hover:text-primary-600 font-medium">
-                  My Services
-                </Link>
-              )}
+              <Link to="/dashboard/my-services" className="text-gray-600 hover:text-primary-600 font-medium">
+                My Services
+              </Link>
               <Link to="/dashboard/my-bookings" className="text-gray-600 hover:text-primary-600 font-medium">
                 My Bookings
               </Link>
@@ -242,37 +240,22 @@ function Dashboard() {
               </h3>
               
               <div className="space-y-3">
-                {user?.role === 'CLIENT' ? (
-                  <>
-                    <Link to="/services" className="w-full btn btn-primary justify-start flex">
-                      <Search className="h-4 w-4 mr-2" />
-                      Find Services
-                    </Link>
-                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
-                      <Clock className="h-4 w-4 mr-2" />
-                      My Bookings
-                    </Link>
-                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
-                      <Star className="h-4 w-4 mr-2" />
-                      My Reviews
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/dashboard/my-services" className="w-full btn btn-primary justify-start flex">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add New Service
-                    </Link>
-                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      My Schedule
-                    </Link>
-                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
-                      <Star className="h-4 w-4 mr-2" />
-                      My Reviews
-                    </Link>
-                  </>
-                )}
+                <Link to="/services" className="w-full btn btn-primary justify-start flex">
+                  <Search className="h-4 w-4 mr-2" />
+                  Find Services
+                </Link>
+                <Link to="/dashboard/my-services" className="w-full btn btn-secondary justify-start flex">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  My Services
+                </Link>
+                <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
+                  <Clock className="h-4 w-4 mr-2" />
+                  My Bookings
+                </Link>
+                <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
+                  <Star className="h-4 w-4 mr-2" />
+                  My Reviews
+                </Link>
                 
                 <Link to="/dashboard/edit-profile" className="w-full btn btn-secondary justify-start flex">
                   <Settings className="h-4 w-4 mr-2" />

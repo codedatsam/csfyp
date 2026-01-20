@@ -61,7 +61,24 @@ function EditProfile() {
 
     try {
       setLoading(true);
-      const response = await api.patch('/auth/profile', formData);
+      
+      // Only send non-empty values
+      const dataToSend = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      };
+      
+      // Only include phone if it has a value
+      if (formData.phone && formData.phone.trim()) {
+        dataToSend.phone = formData.phone;
+      }
+      
+      // Only include location if it has a value
+      if (formData.location && formData.location.trim()) {
+        dataToSend.location = formData.location;
+      }
+      
+      const response = await api.patch('/auth/profile', dataToSend);
       
       if (response.success) {
         toast.success('Profile updated! ✨');
