@@ -19,6 +19,9 @@ const { connectDatabase, checkDatabaseHealth } = require('./config/database');
 
 // Routes
 const authRoutes = require('./routes/auth');
+const servicesRoutes = require('./routes/services');
+const bookingsRoutes = require('./routes/bookings');
+const reviewsRoutes = require('./routes/reviews');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,31 +34,31 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // Enable CORS
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:5173', 
+  'http://localhost:5174',
+  'https://husleflow.com',
+  'https://www.husleflow.com',
+  'https://csfyp-ten.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
   origin: function(origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://husleflow.com',
-      'https://www.husleflow.com',
-      'https://husleflow.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    
-    // Allow requests with no origin (mobile apps, Postman)
+    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
-      callback(null, true); // Allow all in development, restrict in production if needed
+      callback(null, true); // Allow all for now, log blocked
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Parse JSON bodies (limit 10MB)
@@ -161,41 +164,68 @@ function formatUptime(seconds) {
 // API welcome route
 app.get('/api/v1', (req, res) => {
   res.json({ 
-    message: 'Welcome to Hustleflow API v1',
-    description: 'Booking system for vocational services',
+    message: 'Welcome to Husleflow API v1',
+    description: 'Student-to-student service marketplace',
     version: '1.0.0',
     author: 'Samson Fabiyi',
-    studentId: '22065067',
-    university: 'University of Hertfordshire',
-    project: 'BSc Computer Science Final Year Project',
-    supervisor: 'Dr. Barry Nichols',
-    technologies: {
-      backend: 'Node.js + Express.js',
-      database: 'PostgreSQL (Supabase)',
-      orm: 'Prisma',
-      authentication: 'JWT + bcrypt',
-      payment: 'PayPal SDK'
-    },
     endpoints: {
       health: '/health',
-      detailedHealth: '/health/detailed',
       api: '/api/v1',
       authentication: '/api/v1/auth',
-      docs: '/api/v1/docs (coming soon)'
+      services: '/api/v1/services',
+      bookings: '/api/v1/bookings',
+      reviews: '/api/v1/reviews'
     },
     availableRoutes: {
-      'POST /api/v1/auth/register': 'Register new user',
-      'POST /api/v1/auth/login': 'Login user',
-      'GET /api/v1/auth/profile': 'Get user profile (protected)',
-      'PATCH /api/v1/auth/profile': 'Update user profile (protected)',
-      'POST /api/v1/auth/change-password': 'Change password (protected)',
-      'POST /api/v1/auth/logout': 'Logout user (protected)'
+      authentication: {
+        'POST /api/v1/auth/register': 'Register new user',
+        'POST /api/v1/auth/login': 'Login user',
+        'GET /api/v1/auth/profile': 'Get user profile (protected)',
+        'PATCH /api/v1/auth/profile': 'Update user profile (protected)',
+        'POST /api/v1/auth/change-password': 'Change password (protected)',
+        'POST /api/v1/auth/logout': 'Logout user (protected)'
+      },
+      services: {
+        'GET /api/v1/services': 'Get all services (public)',
+        'GET /api/v1/services/categories': 'Get service categories (public)',
+        'GET /api/v1/services/:id': 'Get service by ID (public)',
+        'POST /api/v1/services': 'Create service (provider only)',
+        'GET /api/v1/services/provider/my-services': 'Get my services (provider only)',
+        'PUT /api/v1/services/:id': 'Update service (provider only)',
+        'DELETE /api/v1/services/:id': 'Delete service (provider only)'
+      },
+      bookings: {
+        'POST /api/v1/bookings': 'Create booking (protected)',
+        'GET /api/v1/bookings/my-bookings': 'Get my bookings (protected)',
+        'GET /api/v1/bookings/provider-bookings': 'Get provider bookings (provider only)',
+        'GET /api/v1/bookings/:id': 'Get booking by ID (protected)',
+        'PATCH /api/v1/bookings/:id/status': 'Update booking status (provider only)',
+        'PATCH /api/v1/bookings/:id/cancel': 'Cancel booking (protected)',
+        'GET /api/v1/bookings/available-slots': 'Get available time slots (public)'
+      },
+      reviews: {
+        'POST /api/v1/reviews': 'Create review (protected)',
+        'GET /api/v1/reviews/provider/:providerId': 'Get provider reviews (public)',
+        'GET /api/v1/reviews/my-reviews': 'Get reviews I wrote (protected)',
+        'GET /api/v1/reviews/about-me': 'Get reviews about me (provider)',
+        'PUT /api/v1/reviews/:id': 'Update review (protected)',
+        'DELETE /api/v1/reviews/:id': 'Delete review (protected)'
+      }
     }
   });
 });
 
 // Mount authentication routes
 app.use('/api/v1/auth', authRoutes);
+
+// Mount services routes
+app.use('/api/v1/services', servicesRoutes);
+
+// Mount bookings routes
+app.use('/api/v1/bookings', bookingsRoutes);
+
+// Mount reviews routes
+app.use('/api/v1/reviews', reviewsRoutes);
 
 // ==========================================
 // ERROR HANDLING

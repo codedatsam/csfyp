@@ -17,6 +17,14 @@ import Dashboard from './pages/dashboard/Dashboard';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
+// Services Pages
+import BrowseServices from './pages/services/BrowseServices';
+import ServiceDetail from './pages/services/ServiceDetail';
+import MyServices from './pages/services/MyServices';
+
+// Bookings Pages
+import MyBookings from './pages/bookings/MyBookings';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -25,42 +33,64 @@ function App() {
 
   return (
     <Routes>
-  {/* Public Routes */}
-  <Route 
-    path="/" 
-    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />} 
-  />
-  <Route 
-    path="/login" 
-    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
-  />
-  <Route 
-    path="/register" 
-    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
-  />
-  
-  {/* Email Verification */}
-  <Route path="/verify-email" element={<VerifyEmail />} />
-  
-  {/* Password Reset Routes */}
-  <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Public Routes */}
+      <Route 
+        path="/" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />} 
+      />
+      <Route 
+        path="/login" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+      />
+      <Route 
+        path="/register" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
+      />
+      
+      {/* Email Verification */}
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      
+      {/* Password Reset Routes */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
-  {/* Protected Routes */}
-  <Route
-    path="/dashboard"
-    element={
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    }
-  />
+      {/* Services Routes (Public) */}
+      <Route path="/services" element={<BrowseServices />} />
+      <Route path="/services/:id" element={<ServiceDetail />} />
 
-  {/* 404 */}
-  <Route path="*" element={<Navigate to="/" replace />} />
-</Routes>
+      {/* Protected Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
 
-    
+      {/* My Services (Provider) */}
+      <Route
+        path="/dashboard/my-services"
+        element={
+          <ProtectedRoute>
+            <MyServices />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* My Bookings */}
+      <Route
+        path="/dashboard/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 404 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
