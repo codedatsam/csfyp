@@ -25,6 +25,9 @@ import MyServices from './pages/services/MyServices';
 // Bookings Pages
 import MyBookings from './pages/bookings/MyBookings';
 
+// Profile Pages
+import EditProfile from './pages/profile/EditProfile';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -84,6 +87,16 @@ function App() {
         element={
           <ProtectedRoute>
             <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Edit Profile */}
+      <Route
+        path="/dashboard/edit-profile"
+        element={
+          <ProtectedRoute>
+            <EditProfile />
           </ProtectedRoute>
         }
       />

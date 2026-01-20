@@ -23,7 +23,7 @@ import {
   Clock,
   Star
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 function Dashboard() {
@@ -48,15 +48,30 @@ function Dashboard() {
         <div className="container-custom">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center">
+            <Link to="/dashboard" className="flex items-center">
               <h1 className="text-2xl font-bold text-primary-600">
                 Husleflow
               </h1>
+            </Link>
+
+            {/* Nav Links */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/services" className="text-gray-600 hover:text-primary-600 font-medium">
+                Browse Services
+              </Link>
+              {user?.role === 'PROVIDER' && (
+                <Link to="/dashboard/my-services" className="text-gray-600 hover:text-primary-600 font-medium">
+                  My Services
+                </Link>
+              )}
+              <Link to="/dashboard/my-bookings" className="text-gray-600 hover:text-primary-600 font-medium">
+                My Bookings
+              </Link>
             </div>
 
             {/* User Menu */}
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 hidden sm:block">
                 Hey, <span className="font-semibold">{user?.firstName}</span> 👋
               </span>
               
@@ -65,7 +80,7 @@ function Dashboard() {
                 className="btn btn-secondary flex items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -108,20 +123,23 @@ function Dashboard() {
           </div>
 
           {/* Bookings/Services */}
-          <div className="card hover:shadow-lg transition-shadow">
+          <Link 
+            to={user?.role === 'PROVIDER' ? '/dashboard/my-services' : '/dashboard/my-bookings'}
+            className="card hover:shadow-lg transition-shadow cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">
                   {user?.role === 'PROVIDER' ? 'Active Services' : 'Your Bookings'}
                 </p>
                 <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-xs text-gray-500 mt-1">Get started below!</p>
+                <p className="text-xs text-primary-600 mt-1">Click to view →</p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
                 <Calendar className="h-6 w-6 text-green-600" />
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Account Status */}
           <div className="card hover:shadow-lg transition-shadow">
@@ -208,10 +226,10 @@ function Dashboard() {
 
               {/* Edit Profile Button */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <button className="btn btn-primary">
+                <Link to="/dashboard/edit-profile" className="btn btn-primary inline-flex">
                   <Settings className="h-4 w-4 mr-2" />
                   Edit Profile
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -226,40 +244,40 @@ function Dashboard() {
               <div className="space-y-3">
                 {user?.role === 'CLIENT' ? (
                   <>
-                    <button className="w-full btn btn-primary justify-start">
+                    <Link to="/services" className="w-full btn btn-primary justify-start flex">
                       <Search className="h-4 w-4 mr-2" />
                       Find Services
-                    </button>
-                    <button className="w-full btn btn-secondary justify-start">
+                    </Link>
+                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
                       <Clock className="h-4 w-4 mr-2" />
                       My Bookings
-                    </button>
-                    <button className="w-full btn btn-secondary justify-start">
+                    </Link>
+                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
                       <Star className="h-4 w-4 mr-2" />
                       My Reviews
-                    </button>
+                    </Link>
                   </>
                 ) : (
                   <>
-                    <button className="w-full btn btn-primary justify-start">
+                    <Link to="/dashboard/my-services" className="w-full btn btn-primary justify-start flex">
                       <PlusCircle className="h-4 w-4 mr-2" />
                       Add New Service
-                    </button>
-                    <button className="w-full btn btn-secondary justify-start">
+                    </Link>
+                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
                       <Calendar className="h-4 w-4 mr-2" />
                       My Schedule
-                    </button>
-                    <button className="w-full btn btn-secondary justify-start">
+                    </Link>
+                    <Link to="/dashboard/my-bookings" className="w-full btn btn-secondary justify-start flex">
                       <Star className="h-4 w-4 mr-2" />
                       My Reviews
-                    </button>
+                    </Link>
                   </>
                 )}
                 
-                <button className="w-full btn btn-secondary justify-start">
+                <Link to="/dashboard/edit-profile" className="w-full btn btn-secondary justify-start flex">
                   <Settings className="h-4 w-4 mr-2" />
                   Account Settings
-                </button>
+                </Link>
               </div>
 
               {/* Account Info */}
@@ -285,12 +303,13 @@ function Dashboard() {
             </h3>
             <div className="flex flex-wrap gap-2">
               {['Tutoring', 'Essay Help', 'Tech Support', 'Haircuts', 'Food Delivery', 'Moving Help', 'Photography', 'Design Work'].map((service) => (
-                <span 
-                  key={service} 
+                <Link 
+                  key={service}
+                  to={`/services?category=${encodeURIComponent(service)}`}
                   className="bg-gray-100 hover:bg-primary-100 px-4 py-2 rounded-full text-sm text-gray-700 hover:text-primary-700 cursor-pointer transition-colors"
                 >
                   {service}
-                </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -310,9 +329,6 @@ function Dashboard() {
                 Thanks for being one of the first to try Husleflow! We're building this for students like you. 
                 Your feedback helps shape the future of campus services.
               </p>
-              <button className="mt-3 text-sm font-semibold text-primary-700 hover:text-primary-800">
-                Share Your Feedback →
-              </button>
             </div>
           </div>
         </div>

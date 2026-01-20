@@ -68,6 +68,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
+  // Refresh user data from API
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getProfile();
+      if (response.success) {
+        setUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        return response.data.user;
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+    return null;
+  };
+
   const value = {
     user,
     loading,
@@ -76,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
