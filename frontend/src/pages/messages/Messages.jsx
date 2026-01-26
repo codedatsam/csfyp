@@ -5,21 +5,21 @@
 // Description: Real-time messaging interface
 // ==========================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { 
   MessageCircle, 
   Send, 
   Search,
   ArrowLeft,
-  MoreVertical,
   Trash2,
   Check,
   CheckCheck,
   Loader2,
   Heart,
   Coffee,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -43,18 +43,24 @@ function Messages() {
   const messagesEndRef = useRef(null);
   const messageInputRef = useRef(null);
   const pollIntervalRef = useRef(null);
+  const selectedConversationRef = useRef(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   // Fetch conversations on mount
   useEffect(() => {
     fetchConversations();
     
-    // Poll for new messages every 5 seconds
+    // Poll for new messages every 3 seconds
     pollIntervalRef.current = setInterval(() => {
-      if (selectedConversation) {
-        fetchMessages(selectedConversation.id, true);
-      }
       fetchConversations(true);
-    }, 5000);
+      if (selectedConversationRef.current) {
+        fetchMessages(selectedConversationRef.current.id, true);
+      }
+    }, 3000);
 
     return () => {
       if (pollIntervalRef.current) {
@@ -89,7 +95,6 @@ function Messages() {
     } catch (error) {
       if (!silent) {
         console.error('Failed to fetch conversations:', error);
-        toast.error('Failed to load conversations');
       }
     } finally {
       if (!silent) setLoading(false);
@@ -101,10 +106,11 @@ function Messages() {
       const response = await api.post('/chat/conversations', { recipientId });
       if (response.success) {
         const conv = response.data.conversation;
-        setSelectedConversation({
+        const convData = {
           id: conv.id,
           otherParticipant: conv.otherParticipant
-        });
+        };
+        setSelectedConversation(convData);
         fetchMessages(conv.id);
         setShowMobileChat(true);
         fetchConversations(true);
@@ -136,7 +142,7 @@ function Messages() {
     setSelectedConversation(conv);
     fetchMessages(conv.id);
     setShowMobileChat(true);
-    messageInputRef.current?.focus();
+    setTimeout(() => messageInputRef.current?.focus(), 100);
   };
 
   const handleSendMessage = async (e) => {
@@ -147,12 +153,17 @@ function Messages() {
     setNewMessage('');
     setSendingMessage(true);
 
-    // Optimistic update
+    // Optimistic update - add message immediately
     const tempMessage = {
       id: `temp-${Date.now()}`,
       content: messageContent,
       senderId: user.id,
-      sender: user,
+      sender: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar
+      },
       createdAt: new Date().toISOString(),
       isRead: false
     };
@@ -225,6 +236,12 @@ function Messages() {
     return name.includes(searchQuery.toLowerCase());
   });
 
+  // Check if message is from current user
+  const isMessageFromMe = (message) => {
+    if (!user || !message) return false;
+    return message.senderId === user.id;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -236,10 +253,19 @@ function Messages() {
           <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-primary-600" />
-                Messages
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-primary-600" />
+                  Messages
+                </h2>
+                <button 
+                  onClick={() => fetchConversations()}
+                  className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded-full"
+                  title="Refresh"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
               
               {/* Search */}
               <div className="relative mt-3">
@@ -367,7 +393,7 @@ function Messages() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
                   {messages.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No messages yet</p>
@@ -375,20 +401,20 @@ function Messages() {
                     </div>
                   ) : (
                     messages.map((message) => {
-                      const isOwn = message.senderId === user.id;
+                      const isOwn = isMessageFromMe(message);
                       return (
                         <div
                           key={message.id}
                           className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                               isOwn
-                                ? 'bg-primary-600 text-white rounded-br-md'
-                                : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
+                                ? 'bg-primary-600 text-white rounded-br-sm'
+                                : 'bg-white text-gray-900 rounded-bl-sm shadow-sm border border-gray-100'
                             }`}
                           >
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                             <div className={`flex items-center justify-end gap-1 mt-1 ${
                               isOwn ? 'text-primary-200' : 'text-gray-400'
                             }`}>
