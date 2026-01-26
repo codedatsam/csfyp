@@ -8,6 +8,9 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Note: Add ?connection_limit=5 to your DATABASE_URL for pooler
+// Example: postgresql://...@pooler.supabase.com:5432/postgres?connection_limit=5
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique

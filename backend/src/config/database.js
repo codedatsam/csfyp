@@ -8,13 +8,24 @@
 
 const { PrismaClient } = require('@prisma/client');
 
-// Initialize Prisma Client with logging
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'info', 'warn', 'error'] 
-    : ['error'],
-  errorFormat: 'colorless',
-});
+// Singleton pattern for Prisma Client
+let prisma;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient({
+    log: ['error'],
+    errorFormat: 'colorless',
+  });
+} else {
+  // In development, use global to prevent multiple instances during hot-reload
+  if (!global.prisma) {
+    global.prisma = new PrismaClient({
+      log: ['query', 'info', 'warn', 'error'],
+      errorFormat: 'colorless',
+    });
+  }
+  prisma = global.prisma;
+}
 
 // Test database connection
 async function connectDatabase() {

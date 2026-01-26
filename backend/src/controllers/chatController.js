@@ -5,8 +5,7 @@
 // Description: Real-time messaging between users
 // ==========================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database');
 const { 
   okResponse, 
   createdResponse, 

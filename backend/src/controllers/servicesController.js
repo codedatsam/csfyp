@@ -5,8 +5,7 @@
 // Description: CRUD operations for services
 // ==========================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database');
 const { 
   okResponse, 
   createdResponse, 
