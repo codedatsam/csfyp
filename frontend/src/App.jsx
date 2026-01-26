@@ -25,6 +25,9 @@ import MyServices from './pages/services/MyServices';
 // Bookings Pages
 import MyBookings from './pages/bookings/MyBookings';
 
+// Messages Pages
+import Messages from './pages/messages/Messages';
+
 // Profile Pages
 import EditProfile from './pages/profile/EditProfile';
 
@@ -97,6 +100,16 @@ function App() {
         element={
           <ProtectedRoute>
             <EditProfile />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Messages */}
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <Messages />
           </ProtectedRoute>
         }
       />

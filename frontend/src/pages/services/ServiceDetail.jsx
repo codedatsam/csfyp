@@ -212,6 +212,17 @@ function ServiceDetail() {
                       {service.provider?.totalBookings || 0} completed bookings
                     </span>
                   </div>
+                  
+                  {/* Message Provider Button */}
+                  {user && !isOwnService && (
+                    <Link
+                      to={`/messages?to=${service.provider?.userId}`}
+                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Message Provider
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
