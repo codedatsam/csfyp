@@ -173,10 +173,12 @@ const getServiceById = async (req, res) => {
           include: {
             user: {
               select: {
+                id: true,
                 firstName: true,
                 lastName: true,
                 location: true,
-                phone: true
+                phone: true,
+                avatar: true
               }
             },
             reviews: {

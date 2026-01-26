@@ -43,11 +43,19 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch notifications
+  // Fetch notifications and messages
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
       fetchUnreadMessages();
+      
+      // Poll every 10 seconds for updates
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+        fetchUnreadMessages();
+      }, 10000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -193,7 +201,8 @@ function Navbar() {
             {/* Messages */}
             <Link
               to="/messages"
-              className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+              className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors group"
+              title="Messages"
             >
               <MessageCircle className="h-5 w-5" />
               {unreadMessages > 0 && (
@@ -201,18 +210,29 @@ function Navbar() {
                   {unreadMessages > 9 ? '9+' : unreadMessages}
                 </span>
               )}
+              {/* Tooltip */}
+              <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Messages
+              </span>
             </Link>
 
             {/* Notifications Bell */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={handleBellClick}
-                className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+                className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors group"
+                title="Notifications"
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+                {/* Tooltip - only show when dropdown is closed */}
+                {!notificationsOpen && (
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Notifications
                   </span>
                 )}
               </button>
