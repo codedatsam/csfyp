@@ -12,7 +12,6 @@ import {
   Phone, 
   MapPin, 
   Calendar,
-  LogOut,
   Settings,
   Shield,
   Sparkles,
@@ -23,67 +22,21 @@ import {
   Clock,
   Star
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
+import Navbar from '../../components/layout/Navbar';
 
 function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Logout failed');
-    }
+  // Get avatar initials
+  const getInitials = () => {
+    if (!user) return '?';
+    return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header/Navbar */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="container-custom">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/dashboard" className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">
-                Husleflow
-              </h1>
-            </Link>
-
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/services" className="text-gray-600 hover:text-primary-600 font-medium">
-                Browse Services
-              </Link>
-              <Link to="/dashboard/my-services" className="text-gray-600 hover:text-primary-600 font-medium">
-                My Services
-              </Link>
-              <Link to="/dashboard/my-bookings" className="text-gray-600 hover:text-primary-600 font-medium">
-                My Bookings
-              </Link>
-            </div>
-
-            {/* User Menu */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                Hey, <span className="font-semibold">{user?.firstName}</span> 👋
-              </span>
-              
-              <button
-                onClick={handleLogout}
-                className="btn btn-secondary flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content */}
       <main className="container-custom py-8">
@@ -93,10 +46,7 @@ function Dashboard() {
             Ready to hustle, {user?.firstName}? 🚀
           </h2>
           <p className="text-gray-600">
-            {user?.role === 'PROVIDER' 
-              ? "Manage your services and connect with students who need your help"
-              : "Find fellow students ready to help with whatever you need"
-            }
+            Find services or offer your own - you can do both on Husleflow!
           </p>
         </div>
 
@@ -111,7 +61,7 @@ function Dashboard() {
                   {user?.role === 'PROVIDER' ? 'Hustler' : 'Student'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {user?.role === 'PROVIDER' ? 'Offering services' : 'Looking for services'}
+                  Can book & offer services
                 </p>
               </div>
               <div className="bg-primary-100 p-3 rounded-full">
@@ -122,16 +72,14 @@ function Dashboard() {
 
           {/* Bookings/Services */}
           <Link 
-            to={user?.role === 'PROVIDER' ? '/dashboard/my-services' : '/dashboard/my-bookings'}
+            to="/dashboard/my-services"
             className="card hover:shadow-lg transition-shadow cursor-pointer"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">
-                  {user?.role === 'PROVIDER' ? 'Active Services' : 'Your Bookings'}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-xs text-primary-600 mt-1">Click to view →</p>
+                <p className="text-sm text-gray-600 mb-1">My Services</p>
+                <p className="text-2xl font-bold text-gray-900">View All</p>
+                <p className="text-xs text-primary-600 mt-1">Manage services →</p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
                 <Calendar className="h-6 w-6 text-green-600" />
@@ -159,22 +107,33 @@ function Dashboard() {
           {/* User Profile Card */}
           <div className="lg:col-span-2">
             <div className="card">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Your Profile
-              </h3>
+              <div className="flex items-center gap-4 mb-6">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.firstName}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-primary-200"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary-600 text-white flex items-center justify-center text-xl font-bold">
+                    {getInitials()}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {user?.firstName} {user?.lastName}
+                  </h3>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    user?.role === 'PROVIDER' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user?.role === 'PROVIDER' ? '💼 Provider' : '🎓 Student'}
+                  </span>
+                </div>
+              </div>
               
               <div className="space-y-4">
-                {/* Name */}
-                <div className="flex items-start gap-3">
-                  <User className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600">Full Name</p>
-                    <p className="font-semibold text-gray-900">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                  </div>
-                </div>
-
                 {/* Email */}
                 <div className="flex items-start gap-3">
                   <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
@@ -203,21 +162,6 @@ function Dashboard() {
                     <p className="font-semibold text-gray-900">
                       {user?.location || 'Not provided'}
                     </p>
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div className="flex items-start gap-3">
-                  <Sparkles className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600">Account Type</p>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      user?.role === 'PROVIDER' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {user?.role === 'PROVIDER' ? '💼 Service Provider' : '🎓 Student'}
-                    </span>
                   </div>
                 </div>
               </div>

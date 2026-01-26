@@ -202,6 +202,7 @@ async function getProfile(req, res) {
         phone: true,
         role: true,
         location: true,
+        avatar: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -234,7 +235,7 @@ async function getProfile(req, res) {
 async function updateProfile(req, res) {
   try {
     const userId = req.user.id;
-    const { firstName, lastName, phone, location } = req.body;
+    const { firstName, lastName, phone, location, avatar } = req.body;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -242,7 +243,8 @@ async function updateProfile(req, res) {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
         ...(phone && { phone }),
-        ...(location && { location })
+        ...(location && { location }),
+        ...(avatar !== undefined && { avatar })
       },
       select: {
         id: true,
@@ -252,6 +254,8 @@ async function updateProfile(req, res) {
         phone: true,
         role: true,
         location: true,
+        avatar: true,
+        createdAt: true,
         updatedAt: true
       }
     });
