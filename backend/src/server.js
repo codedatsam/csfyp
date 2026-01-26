@@ -22,6 +22,8 @@ const authRoutes = require('./routes/auth');
 const servicesRoutes = require('./routes/services');
 const bookingsRoutes = require('./routes/bookings');
 const reviewsRoutes = require('./routes/reviews');
+const notificationsRoutes = require('./routes/notifications');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -226,6 +228,12 @@ app.use('/api/v1/bookings', bookingsRoutes);
 
 // Mount reviews routes
 app.use('/api/v1/reviews', reviewsRoutes);
+
+// Mount notifications routes
+app.use('/api/v1/notifications', notificationsRoutes);
+
+// Mount chat routes
+app.use('/api/v1/chat', chatRoutes);
 
 // ==========================================
 // ERROR HANDLING
