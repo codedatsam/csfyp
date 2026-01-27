@@ -21,11 +21,16 @@ const {
 const createService = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { serviceName, category, description, price, duration } = req.body;
+    const { serviceName, category, description, price, duration, image } = req.body;
 
     // Validate required fields
     if (!serviceName || !category || !price || !duration) {
       return badRequestResponse(res, 'Service name, category, price and duration are required');
+    }
+
+    // Validate image size if provided (max 2MB)
+    if (image && image.length > 2 * 1024 * 1024) {
+      return badRequestResponse(res, 'Image size must be less than 2MB');
     }
 
     // Get or create provider profile (for any user who wants to offer services)
@@ -52,7 +57,8 @@ const createService = async (req, res) => {
         category,
         description: description || '',
         price: parseFloat(price),
-        duration: parseInt(duration)
+        duration: parseInt(duration),
+        image: image || null
       },
       include: {
         provider: {
@@ -255,7 +261,7 @@ const updateService = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const { serviceName, category, description, price, duration, isActive } = req.body;
+    const { serviceName, category, description, price, duration, isActive, image } = req.body;
 
     // Get provider
     const provider = await prisma.provider.findUnique({
@@ -275,6 +281,11 @@ const updateService = async (req, res) => {
       return notFoundResponse(res, 'Service not found or unauthorized');
     }
 
+    // Validate image size if provided (max 2MB)
+    if (image && image.length > 2 * 1024 * 1024) {
+      return badRequestResponse(res, 'Image size must be less than 2MB');
+    }
+
     // Update service
     const service = await prisma.service.update({
       where: { id },
@@ -284,7 +295,8 @@ const updateService = async (req, res) => {
         ...(description !== undefined && { description }),
         ...(price && { price: parseFloat(price) }),
         ...(duration && { duration: parseInt(duration) }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(image !== undefined && { image: image || null })
       }
     });
 

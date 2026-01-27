@@ -34,6 +34,9 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminServices from './pages/admin/AdminServices';
 import AdminBookings from './pages/admin/AdminBookings';
 
+// Analytics Pages
+import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+
 // Profile Pages
 import EditProfile from './pages/profile/EditProfile';
 
@@ -142,6 +145,16 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Analytics */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsDashboard />
           </ProtectedRoute>
         }
       />

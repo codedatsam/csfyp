@@ -586,68 +586,85 @@ function ServiceCard({ service }) {
   return (
     <Link
       to={`/services/${service.id}`}
-      className="card hover:shadow-lg transition-shadow group"
+      className="card hover:shadow-lg transition-shadow group overflow-hidden p-0"
     >
-      {/* Category Badge */}
-      <span className="inline-block bg-primary-100 text-primary-700 text-xs font-medium px-2 py-1 rounded-full mb-3">
-        {service.category}
-      </span>
-
-      {/* Service Name */}
-      <h3 className="font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-        {service.serviceName}
-      </h3>
-
-      {/* Description */}
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-        {service.description || 'No description provided'}
-      </p>
-
-      {/* Provider Info */}
-      <div className="flex items-center gap-2 mb-4">
-        {service.provider?.user?.avatar ? (
+      {/* Service Image */}
+      {service.image ? (
+        <div className="aspect-video bg-gray-100">
           <img 
-            src={service.provider.user.avatar} 
-            alt="" 
-            className="w-8 h-8 rounded-full object-cover"
+            src={service.image} 
+            alt={service.serviceName}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-        ) : (
-          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-            <span className="text-primary-700 text-sm font-bold">
-              {service.provider?.user?.firstName?.charAt(0)}
-            </span>
-          </div>
-        )}
-        <div>
-          <p className="text-sm font-medium text-gray-900">
-            {service.provider?.user?.firstName} {service.provider?.user?.lastName}
-          </p>
-          {service.provider?.user?.location && (
-            <p className="text-xs text-gray-500 flex items-center">
-              <MapPin className="h-3 w-3 mr-1" />
-              {service.provider.user.location}
-            </p>
-          )}
         </div>
-      </div>
+      ) : (
+        <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+          <Sparkles className="h-10 w-10 text-primary-400" />
+        </div>
+      )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center text-sm text-gray-500">
-            <Clock className="h-4 w-4 mr-1" />
-            {service.duration} min
-          </span>
-          {service.provider?.rating > 0 && (
-            <span className="flex items-center text-sm text-yellow-600">
-              <Star className="h-4 w-4 mr-1 fill-yellow-400" />
-              {parseFloat(service.provider.rating).toFixed(1)}
-            </span>
-          )}
-        </div>
-        <span className="text-lg font-bold text-primary-600">
-          £{parseFloat(service.price).toFixed(2)}
+      <div className="p-4">
+        {/* Category Badge */}
+        <span className="inline-block bg-primary-100 text-primary-700 text-xs font-medium px-2 py-1 rounded-full mb-2">
+          {service.category}
         </span>
+
+        {/* Service Name */}
+        <h3 className="font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+          {service.serviceName}
+        </h3>
+
+        {/* Description */}
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+          {service.description || 'No description provided'}
+        </p>
+
+        {/* Provider Info */}
+        <div className="flex items-center gap-2 mb-3">
+          {service.provider?.user?.avatar ? (
+            <img 
+              src={service.provider.user.avatar} 
+              alt="" 
+              className="w-7 h-7 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center">
+              <span className="text-primary-700 text-xs font-bold">
+                {service.provider?.user?.firstName?.charAt(0)}
+              </span>
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              {service.provider?.user?.firstName} {service.provider?.user?.lastName}
+            </p>
+            {service.provider?.user?.location && (
+              <p className="text-xs text-gray-500 flex items-center">
+                <MapPin className="h-3 w-3 mr-1" />
+                {service.provider.user.location}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center text-sm text-gray-500">
+              <Clock className="h-4 w-4 mr-1" />
+              {service.duration} min
+            </span>
+            {service.provider?.rating > 0 && (
+              <span className="flex items-center text-sm text-yellow-600">
+                <Star className="h-4 w-4 mr-1 fill-yellow-400" />
+                {parseFloat(service.provider.rating).toFixed(1)}
+              </span>
+            )}
+          </div>
+          <span className="text-lg font-bold text-primary-600">
+            £{parseFloat(service.price).toFixed(2)}
+          </span>
+        </div>
       </div>
     </Link>
   );

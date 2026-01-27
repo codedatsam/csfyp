@@ -8,44 +8,32 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Note: Add ?connection_limit=5 to your DATABASE_URL for pooler
-// Example: postgresql://...@pooler.supabase.com:5432/postgres?connection_limit=5
-
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  firstName String   @map("first_name")
-  lastName  String   @map("last_name")
-  phone     String?
-  avatar    String?  // Profile picture URL
-  role      UserRole @default(CLIENT)
-  location  String?
-  isActive  Boolean  @default(true) @map("is_active")
-  
-  // Email verification fields - ADD THESE
-  isEmailVerified       Boolean   @default(false) @map("is_email_verified")
-  emailVerificationToken String?  @map("email_verification_token")
-  emailVerificationExpiry DateTime? @map("email_verification_expiry")
-  
-  // Password reset fields
-  resetToken          String?   @map("reset_token")
-  resetTokenExpiry    DateTime? @map("reset_token_expiry")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  provider         Provider?
-  bookingsAsClient Booking[]        @relation("ClientBookings")
-  reviews          Review[]
-  notifications    Notification[]
-  chatHistory      ChatHistory[]
-  
-  // Messaging relations
+  id                          String         @id @default(uuid())
+  email                       String         @unique
+  password                    String
+  firstName                   String         @map("first_name")
+  lastName                    String         @map("last_name")
+  phone                       String?
+  role                        UserRole       @default(CLIENT)
+  location                    String?
+  isActive                    Boolean        @default(true) @map("is_active")
+  createdAt                   DateTime       @default(now()) @map("created_at")
+  updatedAt                   DateTime       @updatedAt @map("updated_at")
+  resetToken                  String?        @map("reset_token")
+  resetTokenExpiry            DateTime?      @map("reset_token_expiry")
+  emailVerificationExpiry     DateTime?      @map("email_verification_expiry")
+  emailVerificationToken      String?        @map("email_verification_token")
+  isEmailVerified             Boolean        @default(false) @map("is_email_verified")
+  avatar                      String?
+  bookingsAsClient            Booking[]      @relation("ClientBookings")
+  chatHistory                 ChatHistory[]
   conversationsAsParticipant1 Conversation[] @relation("ConversationParticipant1")
   conversationsAsParticipant2 Conversation[] @relation("ConversationParticipant2")
-  messagesSent               Message[]       @relation("MessageSender")
+  messagesSent                Message[]      @relation("MessageSender")
+  notifications               Notification[]
+  provider                    Provider?
+  reviews                     Review[]
 
   @@index([email])
   @@index([role])
@@ -93,6 +81,7 @@ model Service {
   isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  image       String?
   bookings    Booking[]
   provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
@@ -183,6 +172,7 @@ model Availability {
   @@unique([providerId, dayOfWeek, startTime, endTime], name: "unique_provider_schedule")
   @@index([providerId])
   @@index([dayOfWeek])
+  @@index([providerId], map: "idx_availability_provider_id")
   @@map("availability")
 }
 
@@ -215,21 +205,16 @@ model ChatHistory {
   @@map("chat_history")
 }
 
-// ==========================================
-// MESSAGING MODELS
-// ==========================================
-
 model Conversation {
-  id           String    @id @default(uuid())
-  participant1Id String  @map("participant1_id")
-  participant2Id String  @map("participant2_id")
-  lastMessageAt DateTime? @map("last_message_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  
-  participant1 User      @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
-  participant2 User      @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
-  messages     Message[]
+  id             String    @id @default(uuid())
+  participant1Id String    @map("participant1_id")
+  participant2Id String    @map("participant2_id")
+  lastMessageAt  DateTime? @map("last_message_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  participant1   User      @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2   User      @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages       Message[]
 
   @@unique([participant1Id, participant2Id])
   @@index([participant1Id])
@@ -239,13 +224,12 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(uuid())
-  conversationId String   @map("conversation_id")
-  senderId       String   @map("sender_id")
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  senderId       String       @map("sender_id")
   content        String
-  isRead         Boolean  @default(false) @map("is_read")
-  createdAt      DateTime @default(now()) @map("created_at")
-  
+  isRead         Boolean      @default(false) @map("is_read")
+  createdAt      DateTime     @default(now()) @map("created_at")
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
