@@ -23,7 +23,7 @@ const servicesRoutes = require('./routes/services');
 const bookingsRoutes = require('./routes/bookings');
 const reviewsRoutes = require('./routes/reviews');
 const notificationsRoutes = require('./routes/notifications');
-const chatRoutes = require('./routes/chat');
+// const chatRoutes = require('./routes/chat'); // Disabled for now - connection pool issues
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -232,8 +232,8 @@ app.use('/api/v1/reviews', reviewsRoutes);
 // Mount notifications routes
 app.use('/api/v1/notifications', notificationsRoutes);
 
-// Mount chat routes
-app.use('/api/v1/chat', chatRoutes);
+// Chat routes disabled for now - connection pool issues
+// app.use('/api/v1/chat', chatRoutes);
 
 // ==========================================
 // ERROR HANDLING

@@ -14,8 +14,7 @@ import {
   X,
   Check,
   Trash2,
-  CheckCheck,
-  MessageCircle
+  CheckCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -28,7 +27,6 @@ function Navbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(false);
   const notificationRef = useRef(null);
 
@@ -43,19 +41,10 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch notifications and messages
+  // Fetch notifications
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      fetchUnreadMessages();
-      
-      // Poll every 10 seconds for updates
-      const interval = setInterval(() => {
-        fetchUnreadCount();
-        fetchUnreadMessages();
-      }, 10000);
-      
-      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -67,17 +56,6 @@ function Navbar() {
       }
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
-    }
-  };
-
-  const fetchUnreadMessages = async () => {
-    try {
-      const response = await api.get('/chat/unread-count');
-      if (response.success) {
-        setUnreadMessages(response.data.unreadCount);
-      }
-    } catch (error) {
-      console.error('Failed to fetch unread messages:', error);
     }
   };
 
@@ -198,24 +176,6 @@ function Navbar() {
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
-            {/* Messages */}
-            <Link
-              to="/messages"
-              className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors group"
-              title="Messages"
-            >
-              <MessageCircle className="h-5 w-5" />
-              {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                  {unreadMessages > 9 ? '9+' : unreadMessages}
-                </span>
-              )}
-              {/* Tooltip */}
-              <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Messages
-              </span>
-            </Link>
-
             {/* Notifications Bell */}
             <div className="relative" ref={notificationRef}>
               <button

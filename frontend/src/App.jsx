@@ -25,8 +25,8 @@ import MyServices from './pages/services/MyServices';
 // Bookings Pages
 import MyBookings from './pages/bookings/MyBookings';
 
-// Messages Pages
-import Messages from './pages/messages/Messages';
+// Messages disabled for now
+// import Messages from './pages/messages/Messages';
 
 // Profile Pages
 import EditProfile from './pages/profile/EditProfile';
@@ -104,15 +104,7 @@ function App() {
         }
       />
 
-      {/* Messages */}
-      <Route
-        path="/messages"
-        element={
-          <ProtectedRoute>
-            <Messages />
-          </ProtectedRoute>
-        }
-      />
+      {/* Messages disabled for now */}
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
