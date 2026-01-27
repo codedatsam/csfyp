@@ -20,7 +20,7 @@ const getProviderAnalytics = async (req, res) => {
     const userId = req.user.id;
 
     // Get provider
-    const provider = await prisma.provider.findUnique({
+    let provider = await prisma.provider.findUnique({
       where: { userId },
       include: {
         services: {
@@ -29,8 +29,28 @@ const getProviderAnalytics = async (req, res) => {
       }
     });
 
+    // If no provider profile, return empty analytics (don't error out)
     if (!provider) {
-      return notFoundResponse(res, 'Provider profile not found');
+      return okResponse(res, 'Analytics retrieved', {
+        overview: {
+          totalEarnings: 0,
+          monthlyEarnings: 0,
+          weeklyEarnings: 0,
+          totalBookings: 0,
+          completedBookings: 0,
+          pendingBookings: 0,
+          confirmedBookings: 0,
+          cancelledBookings: 0,
+          totalServices: 0,
+          activeServices: 0,
+          averageRating: 0,
+          totalReviews: 0
+        },
+        serviceBreakdown: [],
+        monthlyData: [],
+        recentBookings: [],
+        recentReviews: []
+      });
     }
 
     // Get all bookings for this provider

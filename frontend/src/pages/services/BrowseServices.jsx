@@ -26,14 +26,44 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 
-// Common locations
+// Common locations - expanded UK list
 const LOCATIONS = [
-  'Hatfield',
+  'All Locations',
   'London',
+  'Manchester',
+  'Birmingham',
+  'Leeds',
+  'Liverpool',
+  'Bristol',
+  'Sheffield',
+  'Newcastle',
+  'Nottingham',
+  'Leicester',
+  'Hatfield',
   'St Albans',
+  'Cambridge',
+  'Oxford',
+  'Brighton',
+  'Southampton',
+  'Reading',
+  'Coventry',
+  'Cardiff',
+  'Edinburgh',
+  'Glasgow',
+  'Belfast',
+  'York',
+  'Bath',
+  'Durham',
+  'Exeter',
+  'Norwich',
+  'Warwick',
+  'Lancaster',
+  'Loughborough',
   'Welwyn Garden City',
   'Stevenage',
-  'All Locations'
+  'Watford',
+  'Hemel Hempstead',
+  'Hertford'
 ];
 
 // Price ranges
