@@ -9,6 +9,7 @@ const { prisma } = require('../config/database');
 const { hashPassword, comparePassword } = require('../utils/password');
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 const {
+  ERROR_CODES,
   createdResponse,
   okResponse,
   badRequestResponse,
@@ -129,6 +130,7 @@ async function login(req, res) {
         phone: true,
         role: true,
         location: true,
+        avatar: true,
         isActive: true,
         isEmailVerified: true,
         createdAt: true
@@ -137,27 +139,28 @@ async function login(req, res) {
 
     // Check if user exists
     if (!user) {
-      return unauthorizedResponse(res, 'Invalid email or password');
+      return unauthorizedResponse(res, 'Invalid email or password', ERROR_CODES.INVALID_CREDENTIALS);
     }
 
     // Check if email is verified
     if (!user.isEmailVerified) {
       return unauthorizedResponse(
         res, 
-        'Please verify your email before logging in. Check your inbox or request a new verification email.'
+        'Please verify your email before logging in.',
+        ERROR_CODES.EMAIL_NOT_VERIFIED
       );
     }
 
     // Check if account is active
     if (!user.isActive) {
-      return unauthorizedResponse(res, 'Account has been deactivated');
+      return unauthorizedResponse(res, 'Account has been deactivated', ERROR_CODES.ACCOUNT_DEACTIVATED);
     }
 
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
 
     if (!isPasswordValid) {
-      return unauthorizedResponse(res, 'Invalid email or password');
+      return unauthorizedResponse(res, 'Invalid email or password', ERROR_CODES.INVALID_CREDENTIALS);
     }
 
     // Remove password from response

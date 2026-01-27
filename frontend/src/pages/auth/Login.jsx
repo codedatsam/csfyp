@@ -5,29 +5,55 @@
 // Description: User login interface
 // ==========================================
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { validateLoginForm } from '../../utils/validators';
 import toast from 'react-hot-toast';
 import { LogIn, Mail, Lock, Loader2, Sparkles, Heart, Coffee } from 'lucide-react';
 
+// Error codes from backend
+const ERROR_CODES = {
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  ACCOUNT_DEACTIVATED: 'ACCOUNT_DEACTIVATED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS'
+};
+
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    rememberMe: false
   });
   
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
     // Clear error for this field
     if (errors[name]) {
@@ -38,27 +64,13 @@ function Login() {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // Validate form using extracted validator
+    const validation = validateLoginForm(formData);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
       toast.error('Please fix the errors');
       return;
     }
@@ -66,27 +78,62 @@ function Login() {
     setLoading(true);
     
     try {
-      const response = await login(formData);
+      const response = await login({
+        email: formData.email,
+        password: formData.password
+      });
       
       if (response.success) {
+        // Handle remember me - store preference
+        if (formData.rememberMe) {
+          localStorage.setItem('rememberEmail', formData.email);
+        } else {
+          localStorage.removeItem('rememberEmail');
+        }
+        
         toast.success('Login successful! Welcome back! 🎉');
-        navigate('/dashboard');
+        // Navigation handled by AuthContext or useEffect above
       }
     } catch (error) {
+      // Only update state if still mounted
+      if (!isMounted.current) return;
+      
       console.error('Login error:', error);
       
-      // Check if it's an unverified email error
-      if (error.error && error.error.includes('verify your email')) {
-        toast.error('Please verify your email first');
-        // Redirect to verification page
-        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
-      } else {
-        toast.error(error.error || 'Login failed. Please try again.');
+      // Handle specific error codes
+      switch (error.code) {
+        case ERROR_CODES.EMAIL_NOT_VERIFIED:
+          toast.error('Please verify your email first');
+          navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+          break;
+        case ERROR_CODES.ACCOUNT_DEACTIVATED:
+          toast.error('Your account has been deactivated. Please contact support.');
+          break;
+        case ERROR_CODES.INVALID_CREDENTIALS:
+          toast.error('Invalid email or password');
+          setErrors({ password: 'Invalid email or password' });
+          break;
+        default:
+          toast.error(error.error || 'Login failed. Please try again.');
       }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberEmail');
+    if (rememberedEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: rememberedEmail,
+        rememberMe: true
+      }));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -106,7 +153,7 @@ function Login() {
 
         {/* Login Form */}
         <div className="bg-white rounded-lg shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -123,12 +170,14 @@ function Login() {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
                   className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
                   placeholder="you@university.ac.uk"
                 />
               </div>
               {errors.email && (
-                <p className="error-text">{errors.email}</p>
+                <p id="email-error" role="alert" className="error-text">{errors.email}</p>
               )}
             </div>
 
@@ -148,12 +197,14 @@ function Login() {
                   autoComplete="current-password"
                   value={formData.password}
                   onChange={handleChange}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
                   className={`input pl-10 ${errors.password ? 'input-error' : ''}`}
                   placeholder="••••••••"
                 />
               </div>
               {errors.password && (
-                <p className="error-text">{errors.password}</p>
+                <p id="password-error" role="alert" className="error-text">{errors.password}</p>
               )}
             </div>
 
@@ -162,8 +213,10 @@ function Login() {
               <div className="flex items-center">
                 <input
                   id="remember-me"
-                  name="remember-me"
+                  name="rememberMe"
                   type="checkbox"
+                  checked={formData.rememberMe}
+                  onChange={handleChange}
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
