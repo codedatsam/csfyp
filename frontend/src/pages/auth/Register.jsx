@@ -338,7 +338,7 @@ function Register() {
               {/* Location */}
               <div>
                 <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  Campus / Hall (Optional)
+                  Location (Optional)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -351,7 +351,7 @@ function Register() {
                     value={formData.location}
                     onChange={handleChange}
                     className="input pl-10"
-                    placeholder="Main Campus, Block A"
+                    placeholder="e.g. Hatfield, London"
                   />
                 </div>
               </div>

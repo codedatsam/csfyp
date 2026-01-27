@@ -86,6 +86,7 @@ const getAllServices = async (req, res) => {
       minPrice, 
       maxPrice, 
       search,
+      location,
       sortBy = 'createdAt',
       order = 'desc',
       page = 1,
@@ -105,6 +106,15 @@ const getAllServices = async (req, res) => {
       where.price = {};
       if (minPrice) where.price.gte = parseFloat(minPrice);
       if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
+
+    // Location filter - filter by provider's user location
+    if (location) {
+      where.provider = {
+        user: {
+          location: { contains: location, mode: 'insensitive' }
+        }
+      };
     }
 
     if (search) {
@@ -130,7 +140,8 @@ const getAllServices = async (req, res) => {
                 select: {
                   firstName: true,
                   lastName: true,
-                  location: true
+                  location: true,
+                  avatar: true
                 }
               }
             }

@@ -295,7 +295,7 @@ function EditProfile() {
               {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Campus / Hall (optional)
+                  Location (optional)
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -304,7 +304,7 @@ function EditProfile() {
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    placeholder="e.g., College Lane Campus"
+                    placeholder="e.g. Hatfield, London"
                     className="input pl-10 w-full"
                   />
                 </div>
