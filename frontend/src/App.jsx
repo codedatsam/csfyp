@@ -28,6 +28,12 @@ import MyBookings from './pages/bookings/MyBookings';
 // Messages disabled for now
 // import Messages from './pages/messages/Messages';
 
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminServices from './pages/admin/AdminServices';
+import AdminBookings from './pages/admin/AdminBookings';
+
 // Profile Pages
 import EditProfile from './pages/profile/EditProfile';
 
@@ -105,6 +111,40 @@ function App() {
       />
 
       {/* Messages disabled for now */}
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/services"
+        element={
+          <ProtectedRoute>
+            <AdminServices />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/bookings"
+        element={
+          <ProtectedRoute>
+            <AdminBookings />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -205,6 +205,14 @@ function Dashboard() {
                   <Settings className="h-4 w-4 mr-2" />
                   Account Settings
                 </Link>
+                
+                {/* Admin Panel Link - Only for admins */}
+                {user?.role === 'ADMIN' && (
+                  <Link to="/admin" className="w-full btn bg-red-600 hover:bg-red-700 text-white justify-start flex">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Link>
+                )}
               </div>
 
               {/* Account Info */}

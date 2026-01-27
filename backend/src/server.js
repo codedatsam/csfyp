@@ -23,6 +23,7 @@ const servicesRoutes = require('./routes/services');
 const bookingsRoutes = require('./routes/bookings');
 const reviewsRoutes = require('./routes/reviews');
 const notificationsRoutes = require('./routes/notifications');
+const adminRoutes = require('./routes/admin');
 // const chatRoutes = require('./routes/chat'); // Disabled for now - connection pool issues
 
 const app = express();
@@ -231,6 +232,9 @@ app.use('/api/v1/reviews', reviewsRoutes);
 
 // Mount notifications routes
 app.use('/api/v1/notifications', notificationsRoutes);
+
+// Mount admin routes
+app.use('/api/v1/admin', adminRoutes);
 
 // Chat routes disabled for now - connection pool issues
 // app.use('/api/v1/chat', chatRoutes);
