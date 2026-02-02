@@ -3,6 +3,7 @@
 // ==========================================
 // Author: Samson Fabiyi
 // Description: Reusable navigation with notifications
+// Fixed: Mobile notification panel centering
 // ==========================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -130,6 +131,7 @@ function Navbar() {
       case 'BOOKING_UPDATE': return '✅';
       case 'BOOKING_CANCELLED': return '❌';
       case 'NEW_REVIEW': return '⭐';
+      case 'BOOKING_FOR_YOU': return '🎉';
       default: return '🔔';
     }
   };
@@ -180,8 +182,8 @@ function Navbar() {
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={handleBellClick}
-                className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors group"
-                title="Notifications"
+                className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
@@ -189,17 +191,11 @@ function Navbar() {
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
-                {/* Tooltip - only show when dropdown is closed */}
-                {!notificationsOpen && (
-                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    Notifications
-                  </span>
-                )}
               </button>
 
-              {/* Notifications Dropdown */}
+              {/* Notifications Dropdown - FIXED MOBILE POSITIONING */}
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                <div className="fixed md:absolute left-1/2 md:left-auto md:right-0 transform -translate-x-1/2 md:translate-x-0 top-16 md:top-auto md:mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
                     <h3 className="font-semibold text-gray-900">Notifications</h3>
@@ -232,7 +228,7 @@ function Navbar() {
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-xl">
+                            <span className="text-xl flex-shrink-0">
                               {getNotificationIcon(notification.type)}
                             </span>
                             <div className="flex-1 min-w-0">
@@ -246,7 +242,7 @@ function Navbar() {
                                 {formatTime(notification.createdAt)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               {!notification.isRead && (
                                 <button
                                   onClick={() => markAsRead(notification.id)}

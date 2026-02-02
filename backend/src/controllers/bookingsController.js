@@ -3,6 +3,7 @@
 // ==========================================
 // Author: Samson Fabiyi
 // Description: Booking management operations
+// Updated: Added provider can book for client feature
 // ==========================================
 
 const { prisma } = require('../config/database');
@@ -114,6 +115,127 @@ const createBooking = async (req, res) => {
   } catch (error) {
     console.error('Create booking error:', error);
     return serverErrorResponse(res, 'Failed to create booking');
+  }
+};
+
+// ==========================================
+// CREATE BOOKING FOR CLIENT (Provider only)
+// ==========================================
+const createBookingForClient = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const { serviceId, clientEmail, bookingDate, timeSlot, notes } = req.body;
+
+    // Validate required fields
+    if (!serviceId || !clientEmail || !bookingDate || !timeSlot) {
+      return badRequestResponse(res, 'Service ID, client email, booking date and time slot are required');
+    }
+
+    // Get provider profile
+    const provider = await prisma.provider.findUnique({
+      where: { userId: providerId },
+      include: { user: true }
+    });
+
+    if (!provider) {
+      return badRequestResponse(res, 'You need a provider profile to book for clients');
+    }
+
+    // Get service and verify ownership
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId }
+    });
+
+    if (!service) {
+      return notFoundResponse(res, 'Service not found');
+    }
+
+    if (service.providerId !== provider.id) {
+      return badRequestResponse(res, 'You can only book your own services for clients');
+    }
+
+    if (!service.isActive) {
+      return badRequestResponse(res, 'This service is no longer available');
+    }
+
+    // Find client by email
+    const client = await prisma.user.findUnique({
+      where: { email: clientEmail.toLowerCase().trim() }
+    });
+
+    if (!client) {
+      return notFoundResponse(res, 'Client not found. Please ensure they have a Husleflow account.');
+    }
+
+    // Provider cannot book for themselves
+    if (client.id === providerId) {
+      return badRequestResponse(res, 'You cannot book for yourself');
+    }
+
+    // Check for conflicting booking
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        providerId: provider.id,
+        bookingDate: new Date(bookingDate),
+        timeSlot,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      }
+    });
+
+    if (existingBooking) {
+      return badRequestResponse(res, 'This time slot is already booked');
+    }
+
+    // Create booking with CONFIRMED status (provider already approved)
+    const booking = await prisma.booking.create({
+      data: {
+        clientId: client.id,
+        providerId: provider.id,
+        serviceId,
+        bookingDate: new Date(bookingDate),
+        timeSlot,
+        totalPrice: service.price,
+        notes: notes || '',
+        status: 'CONFIRMED' // Auto-confirmed since provider is creating it
+      },
+      include: {
+        service: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        client: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Create notification for client
+    await prisma.notification.create({
+      data: {
+        userId: client.id,
+        type: 'BOOKING_FOR_YOU',
+        title: 'Booking Confirmed For You',
+        message: `${provider.user.firstName} has booked ${service.serviceName} for you on ${new Date(bookingDate).toLocaleDateString()} at ${timeSlot}`,
+        data: JSON.stringify({ bookingId: booking.id })
+      }
+    });
+
+    return createdResponse(res, 'Booking created for client successfully', { booking });
+  } catch (error) {
+    console.error('Create booking for client error:', error);
+    return serverErrorResponse(res, 'Failed to create booking for client');
   }
 };
 
@@ -266,7 +388,6 @@ const getBookingById = async (req, res) => {
             phone: true
           }
         },
-        payment: true,
         review: true
       }
     });
@@ -484,12 +605,51 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
+// ==========================================
+// SEARCH CLIENTS (For provider to book for client)
+// ==========================================
+const searchClients = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.length < 2) {
+      return okResponse(res, 'Enter at least 2 characters to search', { users: [] });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: query.toLowerCase() } },
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } }
+        ],
+        isActive: true,
+        id: { not: req.user.id } // Exclude current user
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true
+      },
+      take: 10
+    });
+
+    return okResponse(res, 'Users found', { users });
+  } catch (error) {
+    console.error('Search clients error:', error);
+    return serverErrorResponse(res, 'Failed to search clients');
+  }
+};
+
 module.exports = {
   createBooking,
+  createBookingForClient,
   getMyBookings,
   getProviderBookings,
   getBookingById,
   updateBookingStatus,
   cancelBooking,
-  getAvailableSlots
+  getAvailableSlots,
+  searchClients
 };
