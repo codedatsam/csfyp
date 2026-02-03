@@ -1,523 +1,667 @@
 // ==========================================
-// EMAIL SERVICE - Resend
+// EMAIL SERVICE (Using Resend)
 // ==========================================
 // Author: Samson Fabiyi
 // Description: Email sending functionality using Resend
+// Updated: Added promotional footer for guest emails
 // ==========================================
 
 const { Resend } = require('resend');
 
-// Initialize Resend client
+// Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Default sender
-const DEFAULT_FROM = `${process.env.EMAIL_FROM_NAME || 'Husleflow'} <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
+// Default from email
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Husleflow <onboarding@resend.dev>';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://husleflow.com';
 
-// Consistent footer for all emails
-const EMAIL_FOOTER = `
-  <!-- Footer -->
-  <tr>
-    <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
-      <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px;">
-        Made with ❤️ & ☕ by students, for students
-      </p>
-      <p style="margin: 0 0 8px; color: #0284c7; font-size: 14px; font-weight: bold;">
-        ✨ Husleflow ✨
-      </p>
-      <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-        © 2026 Husleflow. All rights reserved.
-      </p>
-    </td>
-  </tr>
+// Base email template (for registered users)
+const getEmailTemplate = (content, title = 'Husleflow') => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
+    .content { padding: 40px 30px; }
+    .footer { background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+    .footer p { color: #6b7280; font-size: 12px; margin: 5px 0; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .btn:hover { opacity: 0.9; }
+    .code { font-size: 32px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .info-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .info-box.warning { background-color: #fef3c7; border-color: #fcd34d; }
+    .info-box.primary { background-color: #eef2ff; border-color: #c7d2fe; }
+    .booking-details { background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .booking-details table { width: 100%; border-collapse: collapse; }
+    .booking-details td { padding: 8px 0; }
+    .booking-details td:first-child { color: #6b7280; width: 40%; }
+    .booking-details td:last-child { font-weight: 600; color: #1f2937; }
+    .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+    .status-pending { background-color: #fef3c7; color: #92400e; }
+    .status-confirmed { background-color: #d1fae5; color: #065f46; }
+    .status-completed { background-color: #dbeafe; color: #1e40af; }
+    .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 Husleflow</h1>
+    </div>
+    <div class="content">
+      ${content}
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Husleflow. All rights reserved.</p>
+      <p>Student Services Marketplace</p>
+    </div>
+  </div>
+</body>
+</html>
 `;
 
-const TEXT_FOOTER = `
----
-Made with love by students, for students
-✨ Husleflow ✨
-© 2026 Husleflow. All rights reserved.
+// Email template for GUEST users (with promotional footer)
+const getGuestEmailTemplate = (content, title = 'Husleflow') => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
+    .content { padding: 40px 30px; }
+    .promo-section { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .promo-section h2 { color: #ffffff; margin: 0 0 10px 0; font-size: 22px; }
+    .promo-section p { color: #e0e7ff; margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; }
+    .promo-btn { display: inline-block; padding: 12px 24px; background-color: #ffffff; color: #4F46E5; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 5px; }
+    .promo-btn:hover { opacity: 0.9; }
+    .promo-btn.secondary { background-color: transparent; border: 2px solid #ffffff; color: #ffffff; }
+    .footer { background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+    .footer p { color: #6b7280; font-size: 12px; margin: 5px 0; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .code { font-size: 32px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .info-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .info-box.warning { background-color: #fef3c7; border-color: #fcd34d; }
+    .info-box.primary { background-color: #eef2ff; border-color: #c7d2fe; }
+    .booking-details { background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .booking-details table { width: 100%; border-collapse: collapse; }
+    .booking-details td { padding: 8px 0; }
+    .booking-details td:first-child { color: #6b7280; width: 40%; }
+    .booking-details td:last-child { font-weight: 600; color: #1f2937; }
+    .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+    .status-confirmed { background-color: #d1fae5; color: #065f46; }
+    .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 Husleflow</h1>
+    </div>
+    <div class="content">
+      ${content}
+    </div>
+    
+    <!-- Promotional Section for Guest Users -->
+    <div class="promo-section">
+      <h2>🚀 Join Husleflow Today!</h2>
+      <p>
+        Discover more amazing services from talented students, or become a service provider yourself and start earning!
+      </p>
+      <div>
+        <a href="${FRONTEND_URL}/register" class="promo-btn">Create Free Account</a>
+        <a href="${FRONTEND_URL}/services" class="promo-btn secondary">Explore Services</a>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Husleflow. All rights reserved.</p>
+      <p>Student Services Marketplace</p>
+      <p style="margin-top: 10px;">
+        <a href="${FRONTEND_URL}" style="color: #4F46E5; text-decoration: none;">Visit Husleflow</a> · 
+        <a href="${FRONTEND_URL}/register" style="color: #4F46E5; text-decoration: none;">Sign Up</a> · 
+        <a href="${FRONTEND_URL}/services" style="color: #4F46E5; text-decoration: none;">Browse Services</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
 `;
 
 // ==========================================
-// SEND EMAIL FUNCTION
+// SEND VERIFICATION EMAIL
 // ==========================================
-async function sendEmail({ to, subject, html, text }) {
+const sendVerificationEmail = async (email, token, firstName) => {
   try {
+    const code = token.substring(0, 6).toUpperCase();
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Welcome to Husleflow, ${firstName}! 👋</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Thank you for signing up! Please verify your email address using the code below:</p>
+      <div style="text-align: center;">
+        <div class="code">${code}</div>
+      </div>
+      <div class="info-box warning">
+        <p style="margin: 0; color: #92400e;"><strong>⏰ This code expires in 15 minutes.</strong></p>
+      </div>
+      <p style="color: #4b5563;">If you didn't create an account, please ignore this email.</p>
+    `;
+
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      text: text || subject,
+      from: FROM_EMAIL,
+      to: email,
+      subject: '✉️ Verify Your Email - Husleflow',
+      html: getEmailTemplate(content, 'Verify Email')
     });
 
     if (error) {
-      console.error('❌ Email send error:', error);
+      console.error('Resend error:', error);
       return { success: false, error: error.message };
     }
 
-    console.log(`✅ Email sent successfully to ${to}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   ID: ${data.id}`);
-    
     return { success: true, data };
   } catch (error) {
-    console.error('❌ Email service error:', error);
+    console.error('Send verification email error:', error);
     return { success: false, error: error.message };
   }
-}
+};
 
 // ==========================================
-// EMAIL VERIFICATION
+// SEND WELCOME EMAIL
 // ==========================================
-async function sendVerificationEmail(email, verificationToken, firstName = 'there') {
-  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-  const verificationCode = verificationToken.substring(0, 6).toUpperCase();
-  
-  const subject = 'Verify Your Email - Husleflow 🚀';
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td align="center" style="padding: 40px 0;">
-            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="padding: 40px 40px 20px; text-align: center; background-color: #0284c7; border-radius: 8px 8px 0 0;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                    ✨ Husleflow ✨
-                  </h1>
-                  <p style="margin: 10px 0 0; color: #bae6fd; font-size: 14px;">
-                    Your Campus. Your Services. Your Hustle.
-                  </p>
-                </td>
-              </tr>
-              
-              <!-- Content -->
-              <tr>
-                <td style="padding: 40px;">
-                  <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px; text-align: center;">
-                    Hey ${firstName}! 👋
-                  </h2>
-                  
-                  <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6; text-align: center;">
-                    Welcome to Husleflow! Let's verify your email to get you started on your campus hustle.
-                  </p>
-                  
-                  <!-- Verification Code Box -->
-                  <div style="margin: 30px 0; padding: 30px; background-color: #f0f9ff; border-radius: 12px; text-align: center; border: 2px dashed #0284c7;">
-                    <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                      Your Verification Code
-                    </p>
-                    <p style="margin: 0; color: #0284c7; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: monospace;">
-                      ${verificationCode}
-                    </p>
-                  </div>
-                  
-                  <p style="margin: 20px 0; color: #4b5563; font-size: 14px; text-align: center;">
-                    Or click the button below:
-                  </p>
-                  
-                  <!-- Button -->
-                  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td align="center" style="padding: 10px 0 20px;">
-                        <a href="${verifyUrl}" 
-                           style="display: inline-block; padding: 16px 32px; background-color: #0284c7; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
-                          Verify My Email 🚀
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-                  
-                  <!-- Warning -->
-                  <div style="margin: 30px 0; padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
-                    <p style="margin: 0; color: #92400e; font-size: 14px;">
-                      ⏰ <strong>This code expires in 24 hours.</strong><br>
-                      Didn't sign up? Just ignore this email.
-                    </p>
-                  </div>
-                  
-                  <p style="margin: 0; color: #4b5563; font-size: 16px; line-height: 1.6; text-align: center;">
-                    Ready to hustle! 💪<br>
-                    <strong>The Husleflow Team</strong>
-                  </p>
-                </td>
-              </tr>
-              
-              ${EMAIL_FOOTER}
-              
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-
-  const text = `
-Hey ${firstName}! 👋
-
-Welcome to Husleflow! Let's verify your email.
-
-Your Verification Code: ${verificationCode}
-
-Or click this link: ${verifyUrl}
-
-This code expires in 24 hours.
-
-Ready to hustle!
-The Husleflow Team
-${TEXT_FOOTER}
-  `;
-
-  return await sendEmail({ to: email, subject, html, text });
-}
-
-// ==========================================
-// WELCOME EMAIL (After Verification)
-// ==========================================
-async function sendWelcomeEmail(email, firstName, role) {
-  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`;
-  
-  const subject = 'Welcome to Husleflow! 🎉 Let\'s Get Hustling';
-  
-  const roleMessage = role === 'PROVIDER' 
-    ? 'You\'re all set to offer your services and start earning from fellow students!'
-    : 'You can now find and book services from talented students on campus!';
-  
-  const roleEmoji = role === 'PROVIDER' ? '💼' : '🎓';
-  const roleLabel = role === 'PROVIDER' ? 'Service Provider' : 'Student';
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td align="center" style="padding: 40px 0;">
-            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="padding: 40px 40px 20px; text-align: center; background-color: #10b981; border-radius: 8px 8px 0 0;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 32px;">
-                    🎉
-                  </h1>
-                  <h2 style="margin: 10px 0 0; color: #ffffff; font-size: 24px; font-weight: bold;">
-                    You're In, ${firstName}!
-                  </h2>
-                </td>
-              </tr>
-              
-              <!-- Content -->
-              <tr>
-                <td style="padding: 40px;">
-                  <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                    ${roleMessage}
-                  </p>
-                  
-                  <!-- Account Type Badge -->
-                  <div style="margin: 20px 0; padding: 16px; background-color: ${role === 'PROVIDER' ? '#f3e8ff' : '#e0f2fe'}; border-radius: 8px; text-align: center;">
-                    <p style="margin: 0; color: ${role === 'PROVIDER' ? '#7c3aed' : '#0284c7'}; font-size: 16px; font-weight: bold;">
-                      ${roleEmoji} ${roleLabel}
-                    </p>
-                  </div>
-                  
-                  <!-- Button -->
-                  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td align="center" style="padding: 20px 0;">
-                        <a href="${dashboardUrl}" 
-                           style="display: inline-block; padding: 16px 32px; background-color: #0284c7; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
-                          Go to Dashboard 🚀
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-                  
-                  <!-- What's Next -->
-                  <h3 style="margin: 30px 0 15px; color: #1f2937; font-size: 18px;">
-                    Quick Start Guide:
-                  </h3>
-                  
-                  <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 2;">
-                    ${role === 'PROVIDER' ? `
-                      <li>Add your first service</li>
-                      <li>Set your prices and availability</li>
-                      <li>Wait for bookings to roll in!</li>
-                    ` : `
-                      <li>Browse services on campus</li>
-                      <li>Find what you need</li>
-                      <li>Book with one click!</li>
-                    `}
-                  </ul>
-                  
-                  <p style="margin: 30px 0 0; color: #4b5563; font-size: 16px; line-height: 1.6; text-align: center;">
-                    Let's hustle! 💪<br>
-                    <strong>The Husleflow Team</strong>
-                  </p>
-                </td>
-              </tr>
-              
-              ${EMAIL_FOOTER}
-              
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-
-  const text = `
-Welcome to Husleflow, ${firstName}! 🎉
-
-${roleMessage}
-
-Account Type: ${roleLabel}
-
-Go to your dashboard: ${dashboardUrl}
-
-Quick Start:
-${role === 'PROVIDER' 
-  ? '- Add your first service\n- Set your prices\n- Wait for bookings!' 
-  : '- Browse services\n- Find what you need\n- Book with one click!'}
-
-Let's hustle!
-The Husleflow Team
-${TEXT_FOOTER}
-  `;
-
-  return await sendEmail({ to: email, subject, html, text });
-}
-
-// ==========================================
-// PASSWORD RESET EMAIL
-// ==========================================
-async function sendPasswordResetEmail(email, resetToken, firstName = 'there') {
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-  
-  const subject = 'Reset Your Husleflow Password 🔐';
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td align="center" style="padding: 40px 0;">
-            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="padding: 40px 40px 20px; text-align: center; background-color: #0284c7; border-radius: 8px 8px 0 0;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                    ✨ Husleflow ✨
-                  </h1>
-                </td>
-              </tr>
-              
-              <!-- Content -->
-              <tr>
-                <td style="padding: 40px;">
-                  <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px;">
-                    Password Reset Request
-                  </h2>
-                  
-                  <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                    Hey ${firstName}, no worries! Click below to reset your password:
-                  </p>
-                  
-                  <!-- Button -->
-                  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td align="center" style="padding: 20px 0;">
-                        <a href="${resetUrl}" 
-                           style="display: inline-block; padding: 16px 32px; background-color: #0284c7; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
-                          Reset My Password
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-                  
-                  <p style="margin: 20px 0; padding: 12px; background-color: #f3f4f6; border-radius: 4px; word-break: break-all; font-size: 12px;">
-                    <a href="${resetUrl}" style="color: #0284c7;">${resetUrl}</a>
-                  </p>
-                  
-                  <!-- Warning -->
-                  <div style="margin: 30px 0; padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
-                    <p style="margin: 0; color: #92400e; font-size: 14px;">
-                      ⏰ <strong>This link expires in 1 hour.</strong><br>
-                      Didn't request this? Just ignore this email.
-                    </p>
-                  </div>
-                  
-                  <p style="margin: 0; color: #4b5563; font-size: 16px;">
-                    <strong>The Husleflow Team</strong>
-                  </p>
-                </td>
-              </tr>
-              
-              ${EMAIL_FOOTER}
-              
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-
-  const text = `
-Password Reset Request - Husleflow
-
-Hey ${firstName},
-
-Click this link to reset your password:
-${resetUrl}
-
-This link expires in 1 hour.
-
-Didn't request this? Just ignore this email.
-
-The Husleflow Team
-${TEXT_FOOTER}
-  `;
-
-  return await sendEmail({ to: email, subject, html, text });
-}
-
-// ==========================================
-// BOOKING CONFIRMATION EMAIL
-// ==========================================
-async function sendBookingConfirmationEmail(email, bookingDetails) {
-  const { firstName, serviceName, providerName, date, time, price } = bookingDetails;
-  
-  const subject = `Booking Confirmed: ${serviceName} ✅`;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td align="center" style="padding: 40px 0;">
-            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="padding: 40px 40px 20px; text-align: center; background-color: #10b981; border-radius: 8px 8px 0 0;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                    ✅ Booking Confirmed!
-                  </h1>
-                </td>
-              </tr>
-              
-              <!-- Content -->
-              <tr>
-                <td style="padding: 40px;">
-                  <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                    Hey ${firstName}! Your booking is confirmed:
-                  </p>
-                  
-                  <!-- Booking Details -->
-                  <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                      <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Service:</td>
-                        <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: bold; text-align: right;">${serviceName}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Provider:</td>
-                        <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: bold; text-align: right;">${providerName}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date:</td>
-                        <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: bold; text-align: right;">${date}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time:</td>
-                        <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: bold; text-align: right;">${time}</td>
-                      </tr>
-                      <tr style="border-top: 2px solid #e5e7eb;">
-                        <td style="padding: 12px 0 0; color: #6b7280; font-size: 16px; font-weight: bold;">Total:</td>
-                        <td style="padding: 12px 0 0; color: #10b981; font-size: 20px; font-weight: bold; text-align: right;">£${price}</td>
-                      </tr>
-                    </table>
-                  </div>
-                  
-                  <p style="margin: 20px 0 0; color: #4b5563; font-size: 16px; text-align: center;">
-                    <strong>The Husleflow Team</strong>
-                  </p>
-                </td>
-              </tr>
-              
-              ${EMAIL_FOOTER}
-              
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-
-  return await sendEmail({
-    to: email,
-    subject,
-    html,
-    text: `Booking Confirmed: ${serviceName} with ${providerName} on ${date} at ${time}. Total: £${price}${TEXT_FOOTER}`
-  });
-}
-
-// ==========================================
-// TEST EMAIL FUNCTION
-// ==========================================
-async function sendTestEmail(to) {
-  return await sendEmail({
-    to,
-    subject: 'Husleflow Test Email ✅',
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-        <h1 style="color: #0284c7;">✨ Husleflow ✨</h1>
-        <p>Email is working! 🎉</p>
-        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
-        <hr style="margin: 20px 0;">
-        <p style="color: #666; font-size: 12px;">
-          Made with ❤️ & ☕ by students, for students
-        </p>
+const sendWelcomeEmail = async (email, firstName) => {
+  try {
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Welcome aboard, ${firstName}! 🎉</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Your email has been verified and your Husleflow account is now active!</p>
+      <div class="info-box primary">
+        <h3 style="margin-top: 0; color: #3730a3;">What you can do now:</h3>
+        <ul style="color: #4b5563; line-height: 1.8;">
+          <li>🔍 Browse services from other students</li>
+          <li>📅 Book appointments with service providers</li>
+          <li>💼 Offer your own services and earn money</li>
+          <li>⭐ Leave reviews and build your reputation</li>
+        </ul>
       </div>
-    `,
-    text: 'Husleflow Email Test - Working!'
-  });
-}
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/services" class="btn">Start Exploring →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: '🎉 Welcome to Husleflow!',
+      html: getEmailTemplate(content, 'Welcome')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send welcome email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND PASSWORD RESET EMAIL
+// ==========================================
+const sendPasswordResetEmail = async (email, token, firstName) => {
+  try {
+    const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Password Reset Request 🔐</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${firstName}, we received a request to reset your password.</p>
+      <div style="text-align: center;">
+        <a href="${resetLink}" class="btn">Reset Password →</a>
+      </div>
+      <div class="info-box warning">
+        <p style="margin: 0; color: #92400e;"><strong>⏰ This link expires in 1 hour.</strong></p>
+      </div>
+      <p style="color: #4b5563;">If you didn't request a password reset, please ignore this email.</p>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: '🔐 Reset Your Password - Husleflow',
+      html: getEmailTemplate(content, 'Reset Password')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send password reset email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND NEW BOOKING EMAIL (To Provider)
+// ==========================================
+const sendNewBookingEmail = async (providerEmail, providerName, booking) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">New Booking Request! 📅</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${providerName}, you have a new booking request!</p>
+      
+      <div class="booking-details">
+        <table>
+          <tr>
+            <td>Service:</td>
+            <td>${booking.service?.serviceName || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td>Client:</td>
+            <td>${booking.client?.firstName} ${booking.client?.lastName}</td>
+          </tr>
+          <tr>
+            <td>Email:</td>
+            <td>${booking.client?.email}</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>${bookingDate}</td>
+          </tr>
+          <tr>
+            <td>Time:</td>
+            <td>${booking.timeSlot}</td>
+          </tr>
+          <tr>
+            <td>Price:</td>
+            <td>£${parseFloat(booking.totalPrice).toFixed(2)}</td>
+          </tr>
+          ${booking.notes ? `<tr><td>Notes:</td><td>${booking.notes}</td></tr>` : ''}
+          <tr>
+            <td>Status:</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="info-box primary">
+        <p style="margin: 0; color: #3730a3;"><strong>💡 Please confirm or decline this booking in your dashboard.</strong></p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/dashboard/my-bookings" class="btn">View Booking →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: providerEmail,
+      subject: `📅 New Booking: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'New Booking')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send new booking email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND BOOKING CONFIRMATION EMAIL (To Client)
+// ==========================================
+const sendBookingConfirmedEmail = async (clientEmail, clientName, booking) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Booking Confirmed! ✅</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${clientName}, great news! Your booking has been confirmed.</p>
+      
+      <div class="booking-details">
+        <table>
+          <tr>
+            <td>Service:</td>
+            <td>${booking.service?.serviceName || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td>Provider:</td>
+            <td>${booking.provider?.user?.firstName} ${booking.provider?.user?.lastName}</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>${bookingDate}</td>
+          </tr>
+          <tr>
+            <td>Time:</td>
+            <td>${booking.timeSlot}</td>
+          </tr>
+          <tr>
+            <td>Price:</td>
+            <td>£${parseFloat(booking.totalPrice).toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>Status:</td>
+            <td><span class="status-badge status-confirmed">Confirmed</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <p style="margin: 0; color: #065f46;"><strong>✨ Your appointment is all set! Don't forget to arrive on time.</strong></p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/dashboard/my-bookings" class="btn">View My Bookings →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: `✅ Booking Confirmed: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'Booking Confirmed')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send booking confirmed email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND BOOKING CREATED FOR CLIENT EMAIL
+// ==========================================
+const sendBookingCreatedForClientEmail = async (clientEmail, clientName, booking) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Booking Created For You! 🎉</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${clientName}, ${booking.provider?.user?.firstName} has created a booking for you!</p>
+      
+      <div class="booking-details">
+        <table>
+          <tr>
+            <td>Service:</td>
+            <td>${booking.service?.serviceName || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td>Provider:</td>
+            <td>${booking.provider?.user?.firstName} ${booking.provider?.user?.lastName}</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>${bookingDate}</td>
+          </tr>
+          <tr>
+            <td>Time:</td>
+            <td>${booking.timeSlot}</td>
+          </tr>
+          <tr>
+            <td>Price:</td>
+            <td>£${parseFloat(booking.totalPrice).toFixed(2)}</td>
+          </tr>
+          ${booking.notes ? `<tr><td>Notes:</td><td>${booking.notes}</td></tr>` : ''}
+          <tr>
+            <td>Status:</td>
+            <td><span class="status-badge status-confirmed">Confirmed</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <p style="margin: 0; color: #065f46;"><strong>✨ This booking has been automatically confirmed. See you there!</strong></p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/dashboard/my-bookings" class="btn">View My Bookings →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: `🎉 Booking Created For You: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'Booking Created')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send booking created for client email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND BOOKING CANCELLED EMAIL
+// ==========================================
+const sendBookingCancelledEmail = async (email, name, booking, cancelledBy) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Booking Cancelled ❌</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${name}, a booking has been cancelled${cancelledBy ? ` by ${cancelledBy}` : ''}.</p>
+      
+      <div class="booking-details">
+        <table>
+          <tr>
+            <td>Service:</td>
+            <td>${booking.service?.serviceName || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>${bookingDate}</td>
+          </tr>
+          <tr>
+            <td>Time:</td>
+            <td>${booking.timeSlot}</td>
+          </tr>
+          <tr>
+            <td>Status:</td>
+            <td><span class="status-badge status-cancelled">Cancelled</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/services" class="btn">Browse Services →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `❌ Booking Cancelled: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'Booking Cancelled')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send booking cancelled email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND BOOKING COMPLETED EMAIL
+// ==========================================
+const sendBookingCompletedEmail = async (clientEmail, clientName, booking) => {
+  try {
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Booking Completed! 🎊</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${clientName}, your booking for <strong>${booking.service?.serviceName}</strong> has been marked as complete!</p>
+      
+      <div class="info-box primary">
+        <h3 style="margin-top: 0; color: #3730a3;">How was your experience? ⭐</h3>
+        <p style="color: #4b5563; margin-bottom: 0;">Your feedback helps other students find great services. Please take a moment to leave a review!</p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/dashboard/my-bookings" class="btn">Leave a Review →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: `⭐ Leave a Review: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'Leave Review')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send booking completed email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND EMAIL TO EXTERNAL/GUEST (Non-registered user)
+// Uses special template with promotional footer!
+// ==========================================
+const sendExternalBookingEmail = async (email, name, booking, providerName) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const isCancelled = booking.status === 'CANCELLED';
+    
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">
+        ${isCancelled ? 'Booking Cancelled ❌' : 'You Have a Booking! 🎉'}
+      </h2>
+      <p style="color: #4b5563; line-height: 1.6;">
+        Hi ${name}, ${isCancelled 
+          ? `your booking with ${providerName} has been cancelled.`
+          : `${providerName} has booked a service for you!`
+        }
+      </p>
+      
+      <div class="booking-details">
+        <table>
+          <tr>
+            <td>Service:</td>
+            <td>${booking.serviceName}</td>
+          </tr>
+          <tr>
+            <td>Provider:</td>
+            <td>${providerName}</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>${bookingDate}</td>
+          </tr>
+          <tr>
+            <td>Time:</td>
+            <td>${booking.timeSlot}</td>
+          </tr>
+          <tr>
+            <td>Price:</td>
+            <td>£${parseFloat(booking.price).toFixed(2)}</td>
+          </tr>
+          ${booking.notes ? `<tr><td>Notes:</td><td>${booking.notes}</td></tr>` : ''}
+          <tr>
+            <td>Status:</td>
+            <td><span class="status-badge ${isCancelled ? 'status-cancelled' : 'status-confirmed'}">${isCancelled ? 'Cancelled' : 'Confirmed'}</span></td>
+          </tr>
+        </table>
+      </div>
+
+      ${!isCancelled ? `
+        <div class="info-box">
+          <p style="margin: 0; color: #065f46;"><strong>✨ Your appointment is confirmed. See you there!</strong></p>
+        </div>
+      ` : ''}
+    `;
+
+    // Use GUEST template with promotional footer
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `${isCancelled ? '❌ Booking Cancelled' : '🎉 Booking Confirmation'}: ${booking.serviceName} - Husleflow`,
+      html: getGuestEmailTemplate(content, isCancelled ? 'Booking Cancelled' : 'Booking Confirmation')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send external booking email error:', error);
+    return { success: false, error: error.message };
+  }
+};
 
 module.exports = {
-  sendEmail,
-  sendPasswordResetEmail,
-  sendWelcomeEmail,
-  sendBookingConfirmationEmail,
   sendVerificationEmail,
-  sendTestEmail
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendNewBookingEmail,
+  sendBookingConfirmedEmail,
+  sendBookingCreatedForClientEmail,
+  sendBookingCancelledEmail,
+  sendBookingCompletedEmail,
+  sendExternalBookingEmail
 };

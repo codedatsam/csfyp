@@ -93,7 +93,7 @@ model Service {
 
 model Booking {
   id          String        @id @default(uuid())
-  clientId    String        @map("client_id")
+  clientId    String?        @map("client_id")
   providerId  String        @map("provider_id")
   serviceId   String        @map("service_id")
   bookingDate DateTime      @map("booking_date")
@@ -101,9 +101,12 @@ model Booking {
   status      BookingStatus @default(PENDING)
   totalPrice  Decimal       @map("total_price") @db.Decimal(10, 2)
   notes       String?
+  guestName   String?       @map("guest_name")
+  guestEmail  String?       @map("guest_email")
+  guestPhone  String?       @map("guest_phone")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
-  client      User          @relation("ClientBookings", fields: [clientId], references: [id])
+  client      User?         @relation("ClientBookings", fields: [clientId], references: [id])
   provider    Provider      @relation(fields: [providerId], references: [id])
   service     Service       @relation(fields: [serviceId], references: [id])
   payment     Payment?
@@ -115,6 +118,7 @@ model Booking {
   @@index([serviceId])
   @@index([bookingDate])
   @@index([status])
+  @@index([guestEmail])
   @@map("bookings")
 }
 

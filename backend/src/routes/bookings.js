@@ -3,7 +3,7 @@
 // ==========================================
 // Author: Samson Fabiyi
 // Description: Routes for booking management
-// Updated: Added provider book for client route
+// Updated: Added guest booking route
 // ==========================================
 
 const express = require('express');
@@ -12,6 +12,7 @@ const { protect } = require('../middleware/auth');
 const {
   createBooking,
   createBookingForClient,
+  createBookingForGuest,
   getMyBookings,
   getProviderBookings,
   getBookingById,
@@ -30,8 +31,9 @@ router.get('/my-bookings', getMyBookings);
 
 // Provider routes
 router.get('/provider-bookings', getProviderBookings);
-router.post('/for-client', createBookingForClient); // NEW: Provider books for client
-router.get('/search-clients', searchClients); // NEW: Search clients
+router.post('/for-client', createBookingForClient);  // Registered user
+router.post('/for-guest', createBookingForGuest);    // Non-registered user (NEW!)
+router.get('/search-clients', searchClients);
 
 // Shared routes
 router.get('/available-slots', getAvailableSlots);

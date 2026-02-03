@@ -1,0 +1,51 @@
+// ==========================================
+// SCHEMA ADDITION FOR GUEST BOOKINGS
+// ==========================================
+// Add these fields to your Booking model in schema.prisma
+// ==========================================
+
+// In your Booking model, add these fields:
+
+model Booking {
+  id          String        @id @default(uuid())
+  clientId    String?       @map("client_id")  // NOTE: Now OPTIONAL (nullable) for guest bookings
+  providerId  String        @map("provider_id")
+  serviceId   String        @map("service_id")
+  bookingDate DateTime      @map("booking_date")
+  timeSlot    String        @map("time_slot")
+  status      BookingStatus @default(PENDING)
+  totalPrice  Decimal       @map("total_price") @db.Decimal(10, 2)
+  notes       String?
+  
+  // Guest booking fields (NEW!)
+  guestName   String?       @map("guest_name")
+  guestEmail  String?       @map("guest_email")
+  guestPhone  String?       @map("guest_phone")
+  
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  // Relations
+  client      User?         @relation("ClientBookings", fields: [clientId], references: [id])
+  provider    Provider      @relation(fields: [providerId], references: [id])
+  service     Service       @relation(fields: [serviceId], references: [id])
+  payment     Payment?
+  review      Review?
+
+  @@unique([providerId, bookingDate, timeSlot], name: "unique_provider_booking")
+  @@index([clientId])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([bookingDate])
+  @@index([status])
+  @@index([guestEmail])  // NEW!
+  @@map("bookings")
+}
+
+// ==========================================
+// IMPORTANT CHANGES:
+// ==========================================
+// 1. clientId is now OPTIONAL (String? instead of String)
+// 2. client relation is now OPTIONAL (User? instead of User)
+// 3. Added guestName, guestEmail, guestPhone fields
+// 4. Added index on guestEmail for lookups

@@ -3,7 +3,7 @@
 // ==========================================
 // Author: Samson Fabiyi
 // Description: Booking management operations
-// Updated: Added provider can book for client feature
+// Updated: Added guest booking for non-registered users
 // ==========================================
 
 const { prisma } = require('../config/database');
@@ -14,6 +14,14 @@ const {
   notFoundResponse,
   serverErrorResponse 
 } = require('../utils/response');
+const {
+  sendNewBookingEmail,
+  sendBookingConfirmedEmail,
+  sendBookingCreatedForClientEmail,
+  sendBookingCancelledEmail,
+  sendBookingCompletedEmail,
+  sendExternalBookingEmail
+} = require('../services/emailService');
 
 // ==========================================
 // CREATE BOOKING (Client only)
@@ -111,6 +119,18 @@ const createBooking = async (req, res) => {
       }
     });
 
+    // Send email to provider
+    try {
+      await sendNewBookingEmail(
+        service.provider.user.email,
+        service.provider.user.firstName,
+        booking
+      );
+      console.log(`📧 New booking email sent to ${service.provider.user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send new booking email:', emailError);
+    }
+
     return createdResponse(res, 'Booking created successfully', { booking });
   } catch (error) {
     console.error('Create booking error:', error);
@@ -119,7 +139,7 @@ const createBooking = async (req, res) => {
 };
 
 // ==========================================
-// CREATE BOOKING FOR CLIENT (Provider only)
+// CREATE BOOKING FOR CLIENT (Provider only - Registered User)
 // ==========================================
 const createBookingForClient = async (req, res) => {
   try {
@@ -164,7 +184,7 @@ const createBookingForClient = async (req, res) => {
     });
 
     if (!client) {
-      return notFoundResponse(res, 'Client not found. Please ensure they have a Husleflow account.');
+      return notFoundResponse(res, 'Client not found. Please ensure they have a Husleflow account or use "Book for Guest" instead.');
     }
 
     // Provider cannot book for themselves
@@ -196,7 +216,7 @@ const createBookingForClient = async (req, res) => {
         timeSlot,
         totalPrice: service.price,
         notes: notes || '',
-        status: 'CONFIRMED' // Auto-confirmed since provider is creating it
+        status: 'CONFIRMED'
       },
       include: {
         service: true,
@@ -232,10 +252,147 @@ const createBookingForClient = async (req, res) => {
       }
     });
 
+    // Send email to client
+    try {
+      await sendBookingCreatedForClientEmail(
+        client.email,
+        client.firstName,
+        booking
+      );
+      console.log(`📧 Booking created for client email sent to ${client.email}`);
+    } catch (emailError) {
+      console.error('Failed to send booking created for client email:', emailError);
+    }
+
     return createdResponse(res, 'Booking created for client successfully', { booking });
   } catch (error) {
     console.error('Create booking for client error:', error);
     return serverErrorResponse(res, 'Failed to create booking for client');
+  }
+};
+
+// ==========================================
+// CREATE BOOKING FOR GUEST (Non-registered user)
+// ==========================================
+const createBookingForGuest = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const { serviceId, guestEmail, guestName, guestPhone, bookingDate, timeSlot, notes } = req.body;
+
+    // Validate required fields
+    if (!serviceId || !guestEmail || !guestName || !bookingDate || !timeSlot) {
+      return badRequestResponse(res, 'Service ID, guest email, guest name, booking date and time slot are required');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+      return badRequestResponse(res, 'Please enter a valid email address');
+    }
+
+    // Get provider profile
+    const provider = await prisma.provider.findUnique({
+      where: { userId: providerId },
+      include: { user: true }
+    });
+
+    if (!provider) {
+      return badRequestResponse(res, 'You need a provider profile to book for guests');
+    }
+
+    // Get service and verify ownership
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId }
+    });
+
+    if (!service) {
+      return notFoundResponse(res, 'Service not found');
+    }
+
+    if (service.providerId !== provider.id) {
+      return badRequestResponse(res, 'You can only book your own services for guests');
+    }
+
+    if (!service.isActive) {
+      return badRequestResponse(res, 'This service is no longer available');
+    }
+
+    // Check for conflicting booking
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        providerId: provider.id,
+        bookingDate: new Date(bookingDate),
+        timeSlot,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      }
+    });
+
+    if (existingBooking) {
+      return badRequestResponse(res, 'This time slot is already booked');
+    }
+
+    // Create guest booking (clientId is null for guests)
+    const booking = await prisma.booking.create({
+      data: {
+        clientId: null, // No registered client
+        providerId: provider.id,
+        serviceId,
+        bookingDate: new Date(bookingDate),
+        timeSlot,
+        totalPrice: service.price,
+        notes: notes || '',
+        status: 'CONFIRMED',
+        // Store guest info in notes or a separate field
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.toLowerCase().trim(),
+        guestPhone: guestPhone || null
+      },
+      include: {
+        service: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Send email to guest
+    try {
+      await sendExternalBookingEmail(
+        guestEmail.toLowerCase().trim(),
+        guestName.trim(),
+        {
+          serviceName: service.serviceName,
+          bookingDate: booking.bookingDate,
+          timeSlot: booking.timeSlot,
+          price: service.price,
+          notes: notes
+        },
+        `${provider.user.firstName} ${provider.user.lastName}`
+      );
+      console.log(`📧 Guest booking email sent to ${guestEmail}`);
+    } catch (emailError) {
+      console.error('Failed to send guest booking email:', emailError);
+    }
+
+    return createdResponse(res, 'Booking created for guest successfully', { 
+      booking,
+      guestInfo: {
+        name: guestName,
+        email: guestEmail,
+        phone: guestPhone
+      }
+    });
+  } catch (error) {
+    console.error('Create booking for guest error:', error);
+    return serverErrorResponse(res, 'Failed to create booking for guest');
   }
 };
 
@@ -427,7 +584,8 @@ const updateBookingStatus = async (req, res) => {
     }
 
     const provider = await prisma.provider.findUnique({
-      where: { userId }
+      where: { userId },
+      include: { user: true }
     });
 
     if (!provider) {
@@ -452,6 +610,17 @@ const updateBookingStatus = async (req, res) => {
       data: { status },
       include: {
         service: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
         client: {
           select: {
             firstName: true,
@@ -470,15 +639,66 @@ const updateBookingStatus = async (req, res) => {
       });
     }
 
-    // Create notification for client
-    await prisma.notification.create({
-      data: {
-        userId: booking.clientId,
-        type: 'BOOKING_UPDATE',
-        title: `Booking ${status.toLowerCase()}`,
-        message: `Your booking for ${booking.service.serviceName} has been ${status.toLowerCase()}`
+    // Handle notifications and emails
+    if (booking.clientId) {
+      // Registered user - create notification
+      await prisma.notification.create({
+        data: {
+          userId: booking.clientId,
+          type: 'BOOKING_UPDATE',
+          title: `Booking ${status.toLowerCase()}`,
+          message: `Your booking for ${booking.service.serviceName} has been ${status.toLowerCase()}`
+        }
+      });
+
+      // Send email to registered client
+      try {
+        if (status === 'CONFIRMED') {
+          await sendBookingConfirmedEmail(
+            booking.client.email,
+            booking.client.firstName,
+            updatedBooking
+          );
+        } else if (status === 'COMPLETED') {
+          await sendBookingCompletedEmail(
+            booking.client.email,
+            booking.client.firstName,
+            updatedBooking
+          );
+        } else if (status === 'CANCELLED') {
+          await sendBookingCancelledEmail(
+            booking.client.email,
+            booking.client.firstName,
+            updatedBooking,
+            provider.user.firstName
+          );
+        }
+        console.log(`📧 Booking ${status} email sent to ${booking.client.email}`);
+      } catch (emailError) {
+        console.error('Failed to send booking status email:', emailError);
       }
-    });
+    } else if (booking.guestEmail) {
+      // Guest booking - send email to guest
+      try {
+        if (status === 'CANCELLED') {
+          await sendExternalBookingEmail(
+            booking.guestEmail,
+            booking.guestName,
+            {
+              serviceName: booking.service.serviceName,
+              bookingDate: booking.bookingDate,
+              timeSlot: booking.timeSlot,
+              price: booking.totalPrice,
+              status: 'CANCELLED'
+            },
+            `${provider.user.firstName} ${provider.user.lastName}`
+          );
+        }
+        console.log(`📧 Guest booking ${status} email sent to ${booking.guestEmail}`);
+      } catch (emailError) {
+        console.error('Failed to send guest booking email:', emailError);
+      }
+    }
 
     return okResponse(res, 'Booking status updated successfully', { booking: updatedBooking });
   } catch (error) {
@@ -501,7 +721,8 @@ const cancelBooking = async (req, res) => {
         service: true,
         provider: {
           include: { user: true }
-        }
+        },
+        client: true
       }
     });
 
@@ -520,7 +741,15 @@ const cancelBooking = async (req, res) => {
     // Update booking status
     const updatedBooking = await prisma.booking.update({
       where: { id },
-      data: { status: 'CANCELLED' }
+      data: { status: 'CANCELLED' },
+      include: {
+        service: true,
+        provider: {
+          include: {
+            user: true
+          }
+        }
+      }
     });
 
     // Notify provider
@@ -532,6 +761,19 @@ const cancelBooking = async (req, res) => {
         message: `${req.user.firstName} cancelled their booking for ${booking.service.serviceName}`
       }
     });
+
+    // Send email to provider
+    try {
+      await sendBookingCancelledEmail(
+        booking.provider.user.email,
+        booking.provider.user.firstName,
+        updatedBooking,
+        booking.client.firstName
+      );
+      console.log(`📧 Booking cancelled email sent to ${booking.provider.user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send booking cancelled email:', emailError);
+    }
 
     return okResponse(res, 'Booking cancelled successfully', { booking: updatedBooking });
   } catch (error) {
@@ -583,10 +825,8 @@ const getAvailableSlots = async (req, res) => {
 
     let availableSlots;
     if (availability.length > 0) {
-      // Use provider's set availability
       availableSlots = availability.map(a => a.startTime);
     } else {
-      // Use default slots
       availableSlots = defaultSlots;
     }
 
@@ -624,7 +864,7 @@ const searchClients = async (req, res) => {
           { lastName: { contains: query, mode: 'insensitive' } }
         ],
         isActive: true,
-        id: { not: req.user.id } // Exclude current user
+        id: { not: req.user.id }
       },
       select: {
         id: true,
@@ -645,6 +885,7 @@ const searchClients = async (req, res) => {
 module.exports = {
   createBooking,
   createBookingForClient,
+  createBookingForGuest,
   getMyBookings,
   getProviderBookings,
   getBookingById,

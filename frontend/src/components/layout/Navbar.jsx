@@ -1,94 +1,78 @@
 // ==========================================
-// NAVBAR COMPONENT
+// NAVBAR COMPONENT (FIXED)
 // ==========================================
 // Author: Samson Fabiyi
-// Description: Reusable navigation with notifications
-// Fixed: Mobile notification panel centering
+// Description: Navigation bar with centered notification panel on mobile
 // ==========================================
 
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Bell, 
-  LogOut, 
   Menu, 
-  X,
-  Check,
-  Trash2,
-  CheckCheck
+  X, 
+  User, 
+  LogOut, 
+  Bell, 
+  Settings,
+  LayoutDashboard,
+  Briefcase,
+  Calendar,
+  Star,
+  ChevronDown,
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import toast from 'react-hot-toast';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  
+  const profileRef = useRef(null);
   const notificationRef = useRef(null);
 
-  // Close notifications when clicking outside
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setNotificationsOpen(false);
+        setNotificationOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch notifications
-  useEffect(() => {
-    if (user) {
-      fetchUnreadCount();
-    }
-  }, [user]);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await api.get('/notifications/unread-count');
-      if (response.success) {
-        setUnreadCount(response.data.unreadCount);
-      }
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
-    }
-  };
-
   const fetchNotifications = async () => {
     try {
-      setLoading(true);
-      const response = await api.get('/notifications?limit=10');
+      const response = await api.get('/notifications');
       if (response.success) {
-        setNotifications(response.data.notifications);
-        setUnreadCount(response.data.unreadCount);
+        setNotifications(response.data.notifications || []);
+        setUnreadCount(response.data.unreadCount || 0);
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleBellClick = () => {
-    if (!notificationsOpen) {
-      fetchNotifications();
-    }
-    setNotificationsOpen(!notificationsOpen);
-  };
-
-  const markAsRead = async (id) => {
+  const markAsRead = async (notificationId) => {
     try {
-      await api.patch(`/notifications/${id}/read`);
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      await api.put(`/notifications/${notificationId}/read`);
+      fetchNotifications();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -96,266 +80,498 @@ function Navbar() {
 
   const markAllAsRead = async () => {
     try {
-      await api.patch('/notifications/mark-all-read');
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-      toast.success('All notifications marked as read');
+      await api.put('/notifications/read-all');
+      fetchNotifications();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
     }
   };
 
-  const deleteNotification = async (id) => {
-    try {
-      await api.delete(`/notifications/${id}`);
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      toast.success('Notification deleted');
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Logout failed');
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'NEW_BOOKING': return '📅';
-      case 'BOOKING_UPDATE': return '✅';
-      case 'BOOKING_CANCELLED': return '❌';
-      case 'NEW_REVIEW': return '⭐';
-      case 'BOOKING_FOR_YOU': return '🎉';
-      default: return '🔔';
+      case 'NEW_BOOKING':
+        return <Calendar className="h-4 w-4 text-blue-500" />;
+      case 'BOOKING_UPDATE':
+        return <Calendar className="h-4 w-4 text-yellow-500" />;
+      case 'BOOKING_CANCELLED':
+        return <Calendar className="h-4 w-4 text-red-500" />;
+      case 'NEW_REVIEW':
+        return <Star className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const formatTime = (date) => {
+  const formatTimeAgo = (date) => {
     const now = new Date();
-    const then = new Date(date);
-    const diff = Math.floor((now - then) / 1000);
+    const diff = now - new Date(date);
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
 
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return then.toLocaleDateString();
-  };
-
-  // Get avatar initials
-  const getInitials = () => {
-    if (!user) return '?';
-    return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container-custom">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center">
-            <h1 className="text-2xl font-bold text-primary-600">Husleflow</h1>
+          <Link to="/" className="flex items-center">
+            <span className="text-2xl font-bold text-primary-600">Husleflow</span>
           </Link>
 
-          {/* Desktop Nav Links */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/services" className="text-gray-600 hover:text-primary-600 font-medium">
+            <Link 
+              to="/browse" 
+              className={`text-gray-600 hover:text-primary-600 transition-colors ${
+                location.pathname === '/browse' ? 'text-primary-600 font-medium' : ''
+              }`}
+            >
               Browse Services
             </Link>
-            <Link to="/dashboard/my-services" className="text-gray-600 hover:text-primary-600 font-medium">
-              My Services
-            </Link>
-            <Link to="/dashboard/my-bookings" className="text-gray-600 hover:text-primary-600 font-medium">
-              My Bookings
-            </Link>
+
+            {user ? (
+              <div className="flex items-center gap-4">
+                {/* Notifications */}
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    onClick={() => setNotificationOpen(!notificationOpen)}
+                    className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Notification Dropdown - Desktop */}
+                  {notificationOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border overflow-hidden">
+                      <div className="p-4 border-b flex justify-between items-center">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={markAllAsRead}
+                            className="text-sm text-primary-600 hover:text-primary-700"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-4 text-center text-gray-500">
+                            No notifications yet
+                          </div>
+                        ) : (
+                          notifications.slice(0, 10).map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => markAsRead(notification.id)}
+                              className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                                !notification.isRead ? 'bg-primary-50' : ''
+                              }`}
+                            >
+                              <div className="flex gap-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  {getNotificationIcon(notification.type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-sm text-gray-500 truncate">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {formatTimeAgo(notification.createdAt)}
+                                  </p>
+                                </div>
+                                {!notification.isRead && (
+                                  <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0 mt-2" />
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {notifications.length > 0 && (
+                        <Link
+                          to="/dashboard/notifications"
+                          className="block p-3 text-center text-sm text-primary-600 hover:bg-gray-50 border-t"
+                          onClick={() => setNotificationOpen(false)}
+                        >
+                          View all notifications
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Profile Dropdown */}
+                <div className="relative" ref={profileRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center gap-2 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.firstName}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                        <span className="text-primary-700 font-bold text-sm">
+                          {user.firstName?.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform ${
+                      profileDropdownOpen ? 'rotate-180' : ''
+                    }`} />
+                  </button>
+
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border overflow-hidden">
+                      <div className="p-4 border-b">
+                        <p className="font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                      
+                      <div className="py-2">
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/dashboard/my-services"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <Briefcase className="h-4 w-4" />
+                          My Services
+                        </Link>
+                        <Link
+                          to="/dashboard/my-bookings"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <Calendar className="h-4 w-4" />
+                          My Bookings
+                        </Link>
+                        <Link
+                          to="/provider/book-for-customer"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Book for Customer
+                        </Link>
+                        <Link
+                          to="/dashboard/profile"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <User className="h-4 w-4" />
+                          Profile
+                        </Link>
+                        <Link
+                          to="/dashboard/settings"
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                      </div>
+
+                      <div className="border-t py-2">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 w-full"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Log Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link to="/login" className="btn btn-secondary">
+                  Log In
+                </Link>
+                <Link to="/register" className="btn btn-primary">
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Right Side */}
-          <div className="flex items-center gap-3">
-            {/* Notifications Bell */}
-            <div className="relative" ref={notificationRef}>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center gap-2">
+            {user && (
               <button
-                onClick={handleBellClick}
-                className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Notifications"
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className="relative p-2 text-gray-600 hover:text-primary-600"
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
-
-              {/* Notifications Dropdown - FIXED MOBILE POSITIONING */}
-              {notificationsOpen && (
-                <div className="fixed md:absolute left-1/2 md:left-auto md:right-0 transform -translate-x-1/2 md:translate-x-0 top-16 md:top-auto md:mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                      >
-                        <CheckCheck className="h-3 w-3" />
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Notifications List */}
-                  <div className="max-h-80 overflow-y-auto">
-                    {loading ? (
-                      <div className="p-4 text-center text-gray-500">Loading...</div>
-                    ) : notifications.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <Bell className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No notifications yet</p>
-                      </div>
-                    ) : (
-                      notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
-                            !notification.isRead ? 'bg-primary-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="text-xl flex-shrink-0">
-                              {getNotificationIcon(notification.type)}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm ${!notification.isRead ? 'font-semibold' : ''} text-gray-900`}>
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {formatTime(notification.createdAt)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {!notification.isRead && (
-                                <button
-                                  onClick={() => markAsRead(notification.id)}
-                                  className="p-1 text-gray-400 hover:text-primary-600"
-                                  title="Mark as read"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => deleteNotification(notification.id)}
-                                className="p-1 text-gray-400 hover:text-red-600"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  {notifications.length > 0 && (
-                    <Link
-                      to="/dashboard/notifications"
-                      className="block text-center py-3 text-sm text-primary-600 hover:bg-gray-50 border-t border-gray-200"
-                      onClick={() => setNotificationsOpen(false)}
-                    >
-                      View all notifications
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* User Avatar */}
-            <Link
-              to="/dashboard/edit-profile"
-              className="flex items-center gap-2 hover:opacity-80"
-            >
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.firstName}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-primary-200"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-semibold">
-                  {getInitials()}
-                </div>
-              )}
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.firstName}
-              </span>
-            </Link>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="btn btn-secondary flex items-center gap-2 py-2 px-3"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-
-            {/* Mobile Menu Button */}
+            )}
+            
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-primary-600"
+              className="p-2 text-gray-600 hover:text-primary-600"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
-            <div className="flex flex-col gap-2">
-              <Link
-                to="/services"
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Browse Services
-              </Link>
-              <Link
-                to="/dashboard/my-services"
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Services
-              </Link>
-              <Link
-                to="/dashboard/my-bookings"
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Bookings
-              </Link>
-              <Link
-                to="/dashboard/edit-profile"
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Edit Profile
-              </Link>
+      {/* Mobile Notification Panel - CENTERED */}
+      {notificationOpen && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setNotificationOpen(false)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50" />
+          
+          {/* Centered Panel */}
+          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 max-h-[80vh] flex flex-col">
+            <div 
+              className="bg-white rounded-2xl shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-4 border-b flex justify-between items-center bg-primary-600">
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Notifications
+                </h3>
+                <button 
+                  onClick={() => setNotificationOpen(false)}
+                  className="text-white/80 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Mark All Read */}
+              {unreadCount > 0 && (
+                <div className="p-3 border-b bg-gray-50">
+                  <button 
+                    onClick={markAllAsRead}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    Mark all as read ({unreadCount})
+                  </button>
+                </div>
+              )}
+              
+              {/* Notifications List */}
+              <div className="max-h-[50vh] overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Bell className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No notifications yet</p>
+                  </div>
+                ) : (
+                  notifications.slice(0, 10).map((notification) => (
+                    <div
+                      key={notification.id}
+                      onClick={() => {
+                        markAsRead(notification.id);
+                      }}
+                      className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                        !notification.isRead ? 'bg-primary-50' : ''
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-gray-500 line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {formatTimeAgo(notification.createdAt)}
+                          </p>
+                        </div>
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0 mt-2" />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <Link
+                  to="/dashboard/notifications"
+                  className="block p-4 text-center text-sm text-primary-600 hover:bg-gray-50 border-t font-medium"
+                  onClick={() => setNotificationOpen(false)}
+                >
+                  View all notifications
+                </Link>
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-t">
+          <div className="container-custom py-4 space-y-4">
+            <Link
+              to="/browse"
+              className="block py-2 text-gray-600 hover:text-primary-600"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Browse Services
+            </Link>
+
+            {user ? (
+              <>
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.firstName}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                        <span className="text-primary-700 font-bold">
+                          {user.firstName?.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/dashboard/my-services"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Briefcase className="h-5 w-5" />
+                      My Services
+                    </Link>
+                    <Link
+                      to="/dashboard/my-bookings"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Calendar className="h-5 w-5" />
+                      My Bookings
+                    </Link>
+                    <Link
+                      to="/provider/book-for-customer"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <UserPlus className="h-5 w-5" />
+                      Book for Customer
+                    </Link>
+                    <Link
+                      to="/dashboard/profile"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5" />
+                      Profile
+                    </Link>
+                    <Link
+                      to="/dashboard/settings"
+                      className="flex items-center gap-3 py-2 text-gray-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-5 w-5" />
+                      Settings
+                    </Link>
+                  </div>
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 py-2 text-red-600 mt-4 border-t pt-4 w-full"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Log Out
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-3 pt-4 border-t">
+                <Link
+                  to="/login"
+                  className="btn btn-secondary w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn btn-primary w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
