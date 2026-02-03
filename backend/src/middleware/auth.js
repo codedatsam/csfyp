@@ -108,8 +108,7 @@ async function optionalAuth(req, res, next) {
 
 module.exports = {
   authenticate,
+  protect: authenticate, // Alias for backwards compatibility
   authorize,
-  optionalAuth,
-  // Alias for backward compatibility
-  protect: authenticate
+  optionalAuth
 };
