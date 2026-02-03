@@ -247,8 +247,7 @@ const createBookingForClient = async (req, res) => {
         userId: client.id,
         type: 'BOOKING_FOR_YOU',
         title: 'Booking Confirmed For You',
-        message: `${provider.user.firstName} has booked ${service.serviceName} for you on ${new Date(bookingDate).toLocaleDateString()} at ${timeSlot}`,
-        data: JSON.stringify({ bookingId: booking.id })
+        message: `${provider.user.firstName} has booked ${service.serviceName} for you on ${new Date(bookingDate).toLocaleDateString()} at ${timeSlot}`
       }
     });
 
@@ -332,20 +331,19 @@ const createBookingForGuest = async (req, res) => {
     }
 
     // Create guest booking (clientId is null for guests)
+    // Store guest info in notes field (works without migration)
+    const guestInfo = `[GUEST: ${guestName.trim()} | ${guestEmail.toLowerCase().trim()}${guestPhone ? ' | ' + guestPhone : ''}]`;
+    const fullNotes = notes ? `${guestInfo}\n${notes}` : guestInfo;
+    
     const booking = await prisma.booking.create({
       data: {
-        clientId: null, // No registered client
         providerId: provider.id,
         serviceId,
         bookingDate: new Date(bookingDate),
         timeSlot,
         totalPrice: service.price,
-        notes: notes || '',
-        status: 'CONFIRMED',
-        // Store guest info in notes or a separate field
-        guestName: guestName.trim(),
-        guestEmail: guestEmail.toLowerCase().trim(),
-        guestPhone: guestPhone || null
+        notes: fullNotes,
+        status: 'CONFIRMED'
       },
       include: {
         service: true,
@@ -677,13 +675,16 @@ const updateBookingStatus = async (req, res) => {
       } catch (emailError) {
         console.error('Failed to send booking status email:', emailError);
       }
-    } else if (booking.guestEmail) {
-      // Guest booking - send email to guest
+    } else if (booking.notes && booking.notes.includes('[GUEST:')) {
+      // Guest booking - parse guest info from notes
       try {
-        if (status === 'CANCELLED') {
+        const guestMatch = booking.notes.match(/\[GUEST: ([^|]+) \| ([^\]|]+)/);
+        if (guestMatch && status === 'CANCELLED') {
+          const guestName = guestMatch[1].trim();
+          const guestEmail = guestMatch[2].trim();
           await sendExternalBookingEmail(
-            booking.guestEmail,
-            booking.guestName,
+            guestEmail,
+            guestName,
             {
               serviceName: booking.service.serviceName,
               bookingDate: booking.bookingDate,
@@ -693,8 +694,8 @@ const updateBookingStatus = async (req, res) => {
             },
             `${provider.user.firstName} ${provider.user.lastName}`
           );
+          console.log(`📧 Guest booking ${status} email sent to ${guestEmail}`);
         }
-        console.log(`📧 Guest booking ${status} email sent to ${booking.guestEmail}`);
       } catch (emailError) {
         console.error('Failed to send guest booking email:', emailError);
       }

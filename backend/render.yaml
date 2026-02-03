@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: hustleflow-api
+    name: husleflow-api
     runtime: node
     rootDir: backend
     buildCommand: npm install && npx prisma generate
