@@ -20,6 +20,13 @@ import ResetPassword from './pages/auth/ResetPassword';
 // Services Pages
 import MyServices from './pages/services/MyServices';
 
+// Bookings Pages
+import MyBookings from './pages/bookings/MyBookings';
+
+// Profile & Settings
+import Profile from './pages/dashboard/Profile';
+import Settings from './pages/dashboard/Settings';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -68,6 +75,39 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* My Bookings */}
+      <Route
+        path="/dashboard/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Profile */}
+      <Route
+        path="/dashboard/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Settings */}
+      <Route
+        path="/dashboard/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Redirect old routes */}
+      <Route path="/provider/book-for-customer" element={<Navigate to="/dashboard/my-services" replace />} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -283,7 +283,7 @@ function Navbar() {
                           My Bookings
                         </Link>
                         <Link
-                          to="/provider/book-for-customer"
+                          to="/dashboard/my-services"
                           className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
                           onClick={() => setProfileDropdownOpen(false)}
                         >
@@ -517,7 +517,7 @@ function Navbar() {
                       My Bookings
                     </Link>
                     <Link
-                      to="/provider/book-for-customer"
+                      to="/dashboard/my-services"
                       className="flex items-center gap-3 py-2 text-gray-700"
                       onClick={() => setMobileMenuOpen(false)}
                     >
