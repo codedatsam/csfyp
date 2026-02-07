@@ -2,7 +2,7 @@
 // MY SERVICES PAGE
 // ==========================================
 // Author: Samson Fabiyi
-// Description: Manage user's services with Book for Client feature
+// Description: Manage user's services with modals for create/edit/book
 // ==========================================
 
 import { useState, useEffect } from 'react';
@@ -12,17 +12,15 @@ import {
   Edit, 
   Trash2, 
   Eye, 
-  Star, 
   Clock, 
-  MapPin,
   Search,
-  Filter,
   Grid,
   List,
   ToggleLeft,
   ToggleRight,
   UserPlus,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -30,17 +28,46 @@ import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 import BookForClient from '../../components/BookForClient';
 
+const defaultCategories = [
+  'Tutoring',
+  'Essay Help',
+  'Tech Support',
+  'Haircuts',
+  'Food Delivery',
+  'Moving Help',
+  'Photography',
+  'Design Work',
+  'Laundry',
+  'Cleaning',
+  'Fitness',
+  'Music Lessons',
+  'Language Lessons',
+  'Other'
+];
+
 function MyServices() {
   const { user } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
   
   // Book for Client modal
   const [bookForClientModal, setBookForClientModal] = useState(false);
   const [selectedServiceForBooking, setSelectedServiceForBooking] = useState(null);
+  
+  // Create/Edit Service modal
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    serviceName: '',
+    category: '',
+    description: '',
+    price: '',
+    duration: '60'
+  });
 
   useEffect(() => {
     fetchMyServices();
@@ -99,6 +126,81 @@ function MyServices() {
     setBookForClientModal(true);
   };
 
+  // Open modal for create
+  const handleOpenCreateModal = () => {
+    setEditingService(null);
+    setFormData({
+      serviceName: '',
+      category: '',
+      description: '',
+      price: '',
+      duration: '60'
+    });
+    setShowServiceModal(true);
+  };
+
+  // Open modal for edit
+  const handleOpenEditModal = (service) => {
+    setEditingService(service);
+    setFormData({
+      serviceName: service.serviceName,
+      category: service.category,
+      description: service.description || '',
+      price: service.price.toString(),
+      duration: service.duration.toString()
+    });
+    setShowServiceModal(true);
+  };
+
+  // Close service modal
+  const handleCloseServiceModal = () => {
+    setShowServiceModal(false);
+    setEditingService(null);
+    setFormData({
+      serviceName: '',
+      category: '',
+      description: '',
+      price: '',
+      duration: '60'
+    });
+  };
+
+  // Submit create/edit form
+  const handleSubmitService = async (e) => {
+    e.preventDefault();
+
+    if (!formData.serviceName || !formData.category || !formData.price) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      if (editingService) {
+        // Update existing service
+        const response = await api.put(`/services/${editingService.id}`, formData);
+        if (response.success) {
+          toast.success('Service updated! ✨');
+          fetchMyServices();
+          handleCloseServiceModal();
+        }
+      } else {
+        // Create new service
+        const response = await api.post('/services', formData);
+        if (response.success) {
+          toast.success('Service created! 🎉');
+          fetchMyServices();
+          handleCloseServiceModal();
+        }
+      }
+    } catch (error) {
+      toast.error(error.error || 'Failed to save service');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredServices = services.filter(service =>
     service.serviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     service.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -127,10 +229,13 @@ function MyServices() {
             <h1 className="text-2xl font-bold text-gray-900">My Services</h1>
             <p className="text-gray-600">Manage your service offerings</p>
           </div>
-          <Link to="/dashboard/my-services/create" className="btn btn-primary flex items-center gap-2">
+          <button 
+            onClick={handleOpenCreateModal}
+            className="btn btn-primary flex items-center gap-2"
+          >
             <Plus className="h-5 w-5" />
             Add New Service
-          </Link>
+          </button>
         </div>
 
         {/* Search & View Toggle */}
@@ -180,9 +285,12 @@ function MyServices() {
                 : 'Try a different search term'}
             </p>
             {services.length === 0 && (
-              <Link to="/dashboard/my-services/create" className="btn btn-primary">
+              <button 
+                onClick={handleOpenCreateModal}
+                className="btn btn-primary"
+              >
                 Create Your First Service
-              </Link>
+              </button>
             )}
           </div>
         ) : viewMode === 'grid' ? (
@@ -265,13 +373,13 @@ function MyServices() {
                       </Link>
 
                       {/* Edit */}
-                      <Link
-                        to={`/dashboard/my-services/edit/${service.id}`}
+                      <button
+                        onClick={() => handleOpenEditModal(service)}
                         className="text-primary-600 hover:text-primary-700 p-2 hover:bg-primary-50 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit className="h-5 w-5" />
-                      </Link>
+                      </button>
 
                       {/* Delete */}
                       <button
@@ -294,95 +402,70 @@ function MyServices() {
           </div>
         ) : (
           /* List View */
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Service</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Category</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Price</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Duration</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Status</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredServices.map((service) => (
-                  <tr key={service.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {service.image ? (
-                          <img 
-                            src={service.image} 
-                            alt={service.serviceName}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                            <span>🎯</span>
-                          </div>
-                        )}
-                        <span className="font-medium text-gray-900">{service.serviceName}</span>
+          <div className="space-y-4">
+            {filteredServices.map((service) => (
+              <div key={service.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {/* Thumbnail */}
+                    <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      {service.image ? (
+                        <img src={service.image} alt={service.serviceName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+                          <span className="text-2xl">🎯</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">{service.serviceName}</h3>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          service.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {service.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{service.category}</td>
-                    <td className="px-4 py-3 font-semibold text-primary-600">
-                      £{parseFloat(service.price).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{service.duration} min</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        service.isActive 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {service.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleBookForClient(service)}
-                          className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg"
-                          title="Book for client"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </button>
-                        <Link
-                          to={`/services/${service.id}`}
-                          className="text-gray-500 hover:text-primary-600 p-2 hover:bg-gray-100 rounded-lg"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`/dashboard/my-services/edit/${service.id}`}
-                          className="text-primary-600 hover:text-primary-700 p-2 hover:bg-primary-50 rounded-lg"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(service.id)}
-                          disabled={deleting === service.id}
-                          className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                        >
-                          {deleting === service.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </button>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>{service.category}</span>
+                        <span className="flex items-center"><Clock className="h-4 w-4 mr-1" />{service.duration} min</span>
+                        <span className="font-semibold text-primary-600">£{parseFloat(service.price).toFixed(2)}</span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleActive(service.id, service.isActive)}
+                      className="text-gray-500 hover:text-primary-600 p-2 hover:bg-gray-100 rounded-lg"
+                    >
+                      {service.isActive ? <ToggleRight className="h-5 w-5 text-green-500" /> : <ToggleLeft className="h-5 w-5" />}
+                    </button>
+                    <button onClick={() => handleBookForClient(service)} className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg">
+                      <UserPlus className="h-5 w-5" />
+                    </button>
+                    <Link to={`/services/${service.id}`} className="text-gray-500 hover:text-primary-600 p-2 hover:bg-gray-100 rounded-lg">
+                      <Eye className="h-5 w-5" />
+                    </Link>
+                    <button onClick={() => handleOpenEditModal(service)} className="text-primary-600 hover:text-primary-700 p-2 hover:bg-primary-50 rounded-lg">
+                      <Edit className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => handleDelete(service.id)} disabled={deleting === service.id} className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg disabled:opacity-50">
+                      {deleting === service.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Stats */}
         {services.length > 0 && (
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <p className="text-sm text-gray-500">Total Services</p>
               <p className="text-2xl font-bold text-gray-900">{services.length}</p>
@@ -395,7 +478,7 @@ function MyServices() {
             </div>
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <p className="text-sm text-gray-500">Inactive</p>
-              <p className="text-2xl font-bold text-gray-500">
+              <p className="text-2xl font-bold text-gray-400">
                 {services.filter(s => !s.isActive).length}
               </p>
             </div>
@@ -424,6 +507,136 @@ function MyServices() {
             toast.success('Booking created successfully!');
           }}
         />
+      )}
+
+      {/* Create/Edit Service Modal */}
+      {showServiceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h2 className="text-lg font-bold text-gray-900">
+                {editingService ? 'Edit Service' : 'Add New Service'}
+              </h2>
+              <button
+                onClick={handleCloseServiceModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSubmitService} className="p-6 space-y-4">
+              {/* Service Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Service Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.serviceName}
+                  onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
+                  placeholder="e.g., Math Tutoring"
+                  className="input w-full"
+                  required
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category *
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">Select category</option>
+                  {defaultCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe your service..."
+                  rows={3}
+                  className="input w-full"
+                />
+              </div>
+
+              {/* Price & Duration */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price (£) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    placeholder="25.00"
+                    className="input w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Duration *
+                  </label>
+                  <select
+                    value={formData.duration}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                    className="input w-full"
+                  >
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                    <option value="45">45 mins</option>
+                    <option value="60">1 hour</option>
+                    <option value="90">1.5 hours</option>
+                    <option value="120">2 hours</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseServiceModal}
+                  className="flex-1 btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 btn btn-primary disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                  ) : editingService ? (
+                    'Update Service'
+                  ) : (
+                    'Create Service'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -18,27 +18,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
 // Services Pages
-import BrowseServices from './pages/services/BrowseServices';
-import ServiceDetail from './pages/services/ServiceDetail';
 import MyServices from './pages/services/MyServices';
-
-// Bookings Pages
-import MyBookings from './pages/bookings/MyBookings';
-
-// Messages disabled for now
-// import Messages from './pages/messages/Messages';
-
-// Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminServices from './pages/admin/AdminServices';
-import AdminBookings from './pages/admin/AdminBookings';
-
-// Analytics Pages
-import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
-
-// Profile Pages
-import EditProfile from './pages/profile/EditProfile';
 
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -69,10 +49,6 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Services Routes (Public) */}
-      <Route path="/services" element={<BrowseServices />} />
-      <Route path="/services/:id" element={<ServiceDetail />} />
-
       {/* Protected Routes */}
       <Route
         path="/dashboard"
@@ -89,72 +65,6 @@ function App() {
         element={
           <ProtectedRoute>
             <MyServices />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* My Bookings */}
-      <Route
-        path="/dashboard/my-bookings"
-        element={
-          <ProtectedRoute>
-            <MyBookings />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Edit Profile */}
-      <Route
-        path="/dashboard/edit-profile"
-        element={
-          <ProtectedRoute>
-            <EditProfile />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Messages disabled for now */}
-
-      {/* Admin Routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute>
-            <AdminUsers />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/services"
-        element={
-          <ProtectedRoute>
-            <AdminServices />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/bookings"
-        element={
-          <ProtectedRoute>
-            <AdminBookings />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Analytics */}
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <AnalyticsDashboard />
           </ProtectedRoute>
         }
       />
