@@ -108,6 +108,8 @@ function App() {
 
       {/* Redirect old routes */}
       <Route path="/provider/book-for-customer" element={<Navigate to="/dashboard/my-services" replace />} />
+      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/services" element={<Navigate to="/" replace />} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
