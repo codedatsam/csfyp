@@ -216,9 +216,9 @@ function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <Link 
-              to="/browse" 
+              to="/services" 
               className={`text-gray-600 hover:text-primary-600 transition-colors ${
-                location.pathname === '/browse' ? 'text-primary-600 font-medium' : ''
+                location.pathname === '/services' ? 'text-primary-600 font-medium' : ''
               }`}
             >
               Browse Services
@@ -541,7 +541,7 @@ function Navbar() {
         <div className="md:hidden bg-white border-t">
           <div className="container-custom py-4 space-y-4">
             <Link
-              to="/browse"
+              to="/services"
               className="block py-2 text-gray-600 hover:text-primary-600"
               onClick={() => setMobileMenuOpen(false)}
             >

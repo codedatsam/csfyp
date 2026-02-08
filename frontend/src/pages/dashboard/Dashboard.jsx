@@ -139,14 +139,14 @@ function Dashboard() {
                   My Bookings
                 </Link>
 
-                {/* My Reviews - Coming Soon */}
-                <button 
-                  onClick={() => alert('Reviews feature coming soon!')}
-                  className="w-full btn btn-secondary justify-start flex items-center opacity-60"
+                {/* My Reviews */}
+                <Link 
+                  to="/dashboard/reviews" 
+                  className="w-full btn btn-secondary justify-start flex items-center"
                 >
                   <Star className="h-4 w-4 mr-2" />
                   My Reviews
-                </button>
+                </Link>
 
                 {/* Account Settings */}
                 <Link 

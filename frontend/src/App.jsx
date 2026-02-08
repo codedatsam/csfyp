@@ -35,6 +35,12 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminServices from './pages/admin/AdminServices';
 import AdminBookings from './pages/admin/AdminBookings';
 
+// Reviews
+import MyReviews from './pages/reviews/MyReviews';
+
+// Analytics
+import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -117,6 +123,26 @@ function App() {
       {/* Browse Services (public) */}
       <Route path="/services" element={<BrowseServices />} />
       <Route path="/services/:id" element={<ServiceDetail />} />
+
+      {/* Reviews */}
+      <Route
+        path="/dashboard/reviews"
+        element={
+          <ProtectedRoute>
+            <MyReviews />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Analytics */}
+      <Route
+        path="/dashboard/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
       <Route
