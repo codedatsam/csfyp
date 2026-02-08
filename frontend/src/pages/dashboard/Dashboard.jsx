@@ -112,9 +112,9 @@ function Dashboard() {
               </h3>
               
               <div className="space-y-3">
-                {/* Find Services - Link to home for now (has services) */}
+                {/* Find Services */}
                 <Link 
-                  to="/" 
+                  to="/services" 
                   className="w-full btn btn-primary justify-start flex items-center"
                 >
                   <Search className="h-4 w-4 mr-2" />

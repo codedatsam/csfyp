@@ -19,6 +19,8 @@ import ResetPassword from './pages/auth/ResetPassword';
 
 // Services Pages
 import MyServices from './pages/services/MyServices';
+import BrowseServices from './pages/services/BrowseServices';
+import ServiceDetail from './pages/services/ServiceDetail';
 
 // Bookings Pages
 import MyBookings from './pages/bookings/MyBookings';
@@ -26,6 +28,12 @@ import MyBookings from './pages/bookings/MyBookings';
 // Profile & Settings
 import Profile from './pages/dashboard/Profile';
 import Settings from './pages/dashboard/Settings';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminServices from './pages/admin/AdminServices';
+import AdminBookings from './pages/admin/AdminBookings';
 
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -106,10 +114,46 @@ function App() {
         }
       />
 
+      {/* Browse Services (public) */}
+      <Route path="/services" element={<BrowseServices />} />
+      <Route path="/services/:id" element={<ServiceDetail />} />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/services"
+        element={
+          <ProtectedRoute>
+            <AdminServices />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/bookings"
+        element={
+          <ProtectedRoute>
+            <AdminBookings />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Redirect old routes */}
       <Route path="/provider/book-for-customer" element={<Navigate to="/dashboard/my-services" replace />} />
-      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/services" element={<Navigate to="/" replace />} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
