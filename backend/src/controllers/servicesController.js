@@ -226,6 +226,12 @@ const createService = async (req, res) => {
       return badRequestResponse(res, 'Invalid price');
     }
 
+    // Get user info for default business name
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true }
+    });
+
     // Get or create provider profile
     let provider = await prisma.provider.findUnique({
       where: { userId }
@@ -236,7 +242,8 @@ const createService = async (req, res) => {
       provider = await prisma.provider.create({
         data: {
           userId,
-          bio: '',
+          businessName: `${user.firstName} ${user.lastName}`, // Use user's name as default
+          description: '',
           rating: 0,
           totalBookings: 0
         }
