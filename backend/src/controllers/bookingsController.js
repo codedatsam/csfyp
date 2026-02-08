@@ -361,9 +361,24 @@ const createBookingForGuest = async (req, res) => {
       }
     });
 
-    // Send email to guest
+    // Create notification for provider (self-notification for record)
     try {
-      await sendExternalBookingEmail(
+      await prisma.notification.create({
+        data: {
+          userId: providerId,
+          type: 'BOOKING_CONFIRMED',
+          title: 'Guest Booking Created',
+          message: `You booked ${service.serviceName} for ${guestName} (${guestEmail}) on ${new Date(bookingDate).toLocaleDateString('en-GB')} at ${timeSlot}`
+        }
+      });
+    } catch (notifError) {
+      console.error('Failed to create notification:', notifError);
+    }
+
+    // Send email to guest
+    let emailSent = false;
+    try {
+      const emailResult = await sendExternalBookingEmail(
         guestEmail.toLowerCase().trim(),
         guestName.trim(),
         {
@@ -375,7 +390,13 @@ const createBookingForGuest = async (req, res) => {
         },
         `${provider.user.firstName} ${provider.user.lastName}`
       );
-      console.log(`📧 Guest booking email sent to ${guestEmail}`);
+      
+      if (emailResult.success) {
+        console.log(`📧 Guest booking email sent to ${guestEmail}`);
+        emailSent = true;
+      } else {
+        console.error(`❌ Email failed for ${guestEmail}:`, emailResult.error);
+      }
     } catch (emailError) {
       console.error('Failed to send guest booking email:', emailError);
     }
@@ -386,7 +407,8 @@ const createBookingForGuest = async (req, res) => {
         name: guestName,
         email: guestEmail,
         phone: guestPhone
-      }
+      },
+      emailSent
     });
   } catch (error) {
     console.error('Create booking for guest error:', error);

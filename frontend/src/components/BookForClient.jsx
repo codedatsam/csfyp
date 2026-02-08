@@ -144,7 +144,16 @@ function BookForClient({ service, onClose, onSuccess }) {
         const clientName = bookingType === 'registered' 
           ? selectedClient.firstName 
           : guestName;
-        toast.success(`Booking created for ${clientName}! 📧 Email sent.`);
+        
+        // Show appropriate message based on email status
+        if (bookingType === 'guest' && response.data.emailSent === false) {
+          toast.success(`Booking created for ${clientName}! ⚠️ Email could not be sent.`, {
+            duration: 5000
+          });
+        } else {
+          toast.success(`Booking created for ${clientName}! 📧 Confirmation sent.`);
+        }
+        
         if (onSuccess) onSuccess(response.data.booking);
         onClose();
       }

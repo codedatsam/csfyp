@@ -21,6 +21,7 @@ const { connectDatabase, checkDatabaseHealth } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const servicesRoutes = require('./routes/services');
 const bookingsRoutes = require('./routes/bookings');
+const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -184,6 +185,9 @@ app.use('/api/v1/services', servicesRoutes);
 
 // Mount bookings routes
 app.use('/api/v1/bookings', bookingsRoutes);
+
+// Mount notifications routes
+app.use('/api/v1/notifications', notificationsRoutes);
 
 // ==========================================
 // ERROR HANDLING

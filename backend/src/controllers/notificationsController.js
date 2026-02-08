@@ -2,80 +2,51 @@
 // NOTIFICATIONS CONTROLLER
 // ==========================================
 // Author: Samson Fabiyi
-// Description: Notification management
+// Description: Handle user notifications
 // ==========================================
 
 const { prisma } = require('../config/database');
 const { 
   okResponse, 
-  createdResponse, 
+  badRequestResponse,
   notFoundResponse,
   serverErrorResponse 
 } = require('../utils/response');
 
 // ==========================================
-// GET MY NOTIFICATIONS
+// GET USER NOTIFICATIONS
 // ==========================================
-const getMyNotifications = async (req, res) => {
+const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+    const { limit = 20, offset = 0 } = req.query;
 
-    const where = { userId };
-    if (unreadOnly === 'true') {
-      where.isRead = false;
-    }
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit),
+      skip: parseInt(offset)
+    });
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = parseInt(limit);
-
-    const [notifications, total, unreadCount] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take
-      }),
-      prisma.notification.count({ where }),
-      prisma.notification.count({ where: { userId, isRead: false } })
-    ]);
-
-    return okResponse(res, 'Notifications retrieved successfully', {
-      notifications,
-      unreadCount,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / parseInt(limit))
+    const unreadCount = await prisma.notification.count({
+      where: { 
+        userId,
+        isRead: false
       }
+    });
+
+    return okResponse(res, 'Notifications retrieved', { 
+      notifications,
+      unreadCount
     });
   } catch (error) {
     console.error('Get notifications error:', error);
-    return serverErrorResponse(res, 'Failed to retrieve notifications');
+    return serverErrorResponse(res, 'Failed to get notifications');
   }
 };
 
 // ==========================================
-// GET UNREAD COUNT
-// ==========================================
-const getUnreadCount = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const count = await prisma.notification.count({
-      where: { userId, isRead: false }
-    });
-
-    return okResponse(res, 'Unread count retrieved', { unreadCount: count });
-  } catch (error) {
-    console.error('Get unread count error:', error);
-    return serverErrorResponse(res, 'Failed to get unread count');
-  }
-};
-
-// ==========================================
-// MARK AS READ
+// MARK NOTIFICATION AS READ
 // ==========================================
 const markAsRead = async (req, res) => {
   try {
@@ -83,19 +54,22 @@ const markAsRead = async (req, res) => {
     const { id } = req.params;
 
     const notification = await prisma.notification.findFirst({
-      where: { id, userId }
+      where: { 
+        id,
+        userId
+      }
     });
 
     if (!notification) {
       return notFoundResponse(res, 'Notification not found');
     }
 
-    const updated = await prisma.notification.update({
+    await prisma.notification.update({
       where: { id },
       data: { isRead: true }
     });
 
-    return okResponse(res, 'Notification marked as read', { notification: updated });
+    return okResponse(res, 'Notification marked as read');
   } catch (error) {
     console.error('Mark as read error:', error);
     return serverErrorResponse(res, 'Failed to mark notification as read');
@@ -103,14 +77,17 @@ const markAsRead = async (req, res) => {
 };
 
 // ==========================================
-// MARK ALL AS READ
+// MARK ALL NOTIFICATIONS AS READ
 // ==========================================
 const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
 
     await prisma.notification.updateMany({
-      where: { userId, isRead: false },
+      where: { 
+        userId,
+        isRead: false
+      },
       data: { isRead: true }
     });
 
@@ -130,14 +107,19 @@ const deleteNotification = async (req, res) => {
     const { id } = req.params;
 
     const notification = await prisma.notification.findFirst({
-      where: { id, userId }
+      where: { 
+        id,
+        userId
+      }
     });
 
     if (!notification) {
       return notFoundResponse(res, 'Notification not found');
     }
 
-    await prisma.notification.delete({ where: { id } });
+    await prisma.notification.delete({
+      where: { id }
+    });
 
     return okResponse(res, 'Notification deleted');
   } catch (error) {
@@ -159,14 +141,13 @@ const clearAllNotifications = async (req, res) => {
 
     return okResponse(res, 'All notifications cleared');
   } catch (error) {
-    console.error('Clear notifications error:', error);
+    console.error('Clear all notifications error:', error);
     return serverErrorResponse(res, 'Failed to clear notifications');
   }
 };
 
 module.exports = {
-  getMyNotifications,
-  getUnreadCount,
+  getNotifications,
   markAsRead,
   markAllAsRead,
   deleteNotification,
