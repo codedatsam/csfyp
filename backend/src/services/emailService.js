@@ -4,6 +4,7 @@
 // Author: Samson Fabiyi
 // Description: Email sending functionality using Resend
 // Updated: Added promotional footer for guest emails
+// IMPORTANT: For external emails, you need a verified domain in Resend
 // ==========================================
 
 const { Resend } = require('resend');
@@ -11,9 +12,18 @@ const { Resend } = require('resend');
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Default from email
+// Default from email - IMPORTANT: Must be from verified domain for external emails
+// onboarding@resend.dev only works for emails to your own verified address
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Husleflow <onboarding@resend.dev>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://husleflow.com';
+
+// Check if we're using Resend's test domain (won't work for external emails)
+const isTestDomain = FROM_EMAIL.includes('resend.dev');
+if (isTestDomain) {
+  console.warn('⚠️  WARNING: Using resend.dev test domain. External emails will fail!');
+  console.warn('⚠️  To send to external emails, add a verified domain in Resend dashboard');
+  console.warn('⚠️  and set FROM_EMAIL env variable (e.g., noreply@yourdomain.com)');
+}
 
 // Base email template (for registered users)
 const getEmailTemplate = (content, title = 'Husleflow') => `
@@ -578,6 +588,13 @@ const sendBookingCompletedEmail = async (clientEmail, clientName, booking) => {
 // ==========================================
 const sendExternalBookingEmail = async (email, name, booking, providerName) => {
   try {
+    console.log(`📧 Attempting to send booking email to external guest: ${email}`);
+    
+    // Warn about test domain limitation
+    if (FROM_EMAIL.includes('resend.dev')) {
+      console.warn(`⚠️  Using Resend test domain - email to ${email} may fail unless it's your verified email`);
+    }
+
     const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
       weekday: 'long',
       day: 'numeric',
@@ -592,9 +609,9 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
         ${isCancelled ? 'Booking Cancelled ❌' : 'You Have a Booking! 🎉'}
       </h2>
       <p style="color: #4b5563; line-height: 1.6;">
-        Hi ${name}, ${isCancelled 
-          ? `your booking with ${providerName} has been cancelled.`
-          : `${providerName} has booked a service for you!`
+        Hi there! ${isCancelled 
+          ? `Your booking for <strong>${booking.serviceName}</strong> with ${providerName} has been cancelled.`
+          : `${providerName} has booked <strong>${booking.serviceName}</strong> for you!`
         }
       </p>
       
@@ -602,7 +619,7 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
         <table>
           <tr>
             <td>Service:</td>
-            <td>${booking.serviceName}</td>
+            <td><strong>${booking.serviceName}</strong></td>
           </tr>
           <tr>
             <td>Provider:</td>
@@ -639,17 +656,28 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: `${isCancelled ? '❌ Booking Cancelled' : '🎉 Booking Confirmation'}: ${booking.serviceName} - Husleflow`,
+      subject: `${isCancelled ? '❌ Booking Cancelled' : '🎉 Booking Confirmed'}: ${booking.serviceName} - Husleflow`,
       html: getGuestEmailTemplate(content, isCancelled ? 'Booking Cancelled' : 'Booking Confirmation')
     });
 
     if (error) {
+      console.error(`❌ Failed to send email to ${email}:`, error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Provide helpful message for common errors
+      if (error.message?.includes('not allowed')) {
+        console.error('💡 TIP: To send to external emails, you need to verify your own domain in Resend');
+        console.error('💡 Visit: https://resend.com/domains to add your domain');
+      }
+      
       return { success: false, error: error.message };
     }
 
+    console.log(`✅ Email sent successfully to ${email}, ID: ${data?.id}`);
     return { success: true, data };
   } catch (error) {
     console.error('Send external booking email error:', error);
+    console.error('Full error:', JSON.stringify(error, null, 2));
     return { success: false, error: error.message };
   }
 };

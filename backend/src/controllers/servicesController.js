@@ -2,7 +2,7 @@
 // SERVICES CONTROLLER
 // ==========================================
 // Author: Samson Fabiyi
-// Description: CRUD operations for services
+// Description: Service management operations
 // ==========================================
 
 const { prisma } = require('../config/database');
@@ -10,96 +10,49 @@ const {
   okResponse, 
   createdResponse, 
   badRequestResponse,
-  forbiddenResponse,
   notFoundResponse,
+  forbiddenResponse,
   serverErrorResponse 
 } = require('../utils/response');
 
-// ==========================================
-// CREATE SERVICE (Any authenticated user)
-// ==========================================
-const createService = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { serviceName, category, description, price, duration, image } = req.body;
-
-    // Validate required fields
-    if (!serviceName || !category || !price || !duration) {
-      return badRequestResponse(res, 'Service name, category, price and duration are required');
-    }
-
-    // Validate image size if provided (max 2MB)
-    if (image && image.length > 2 * 1024 * 1024) {
-      return badRequestResponse(res, 'Image size must be less than 2MB');
-    }
-
-    // Get or create provider profile (for any user who wants to offer services)
-    let provider = await prisma.provider.findUnique({
-      where: { userId }
-    });
-
-    if (!provider) {
-      // Create provider profile automatically for any user
-      provider = await prisma.provider.create({
-        data: {
-          userId,
-          businessName: `${req.user.firstName}'s Services`,
-          description: 'Student service provider on Husleflow'
-        }
-      });
-    }
-
-    // Create the service
-    const service = await prisma.service.create({
-      data: {
-        providerId: provider.id,
-        serviceName,
-        category,
-        description: description || '',
-        price: parseFloat(price),
-        duration: parseInt(duration),
-        image: image || null
-      },
-      include: {
-        provider: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    return createdResponse(res, 'Service created successfully', { service });
-  } catch (error) {
-    console.error('Create service error:', error);
-    return serverErrorResponse(res, 'Failed to create service');
-  }
-};
+// Default service categories
+const defaultCategories = [
+  'Tutoring',
+  'Essay Help',
+  'Tech Support',
+  'Haircuts',
+  'Food Delivery',
+  'Moving Help',
+  'Photography',
+  'Design Work',
+  'Laundry',
+  'Cleaning',
+  'Fitness',
+  'Music Lessons',
+  'Language Lessons',
+  'Other'
+];
 
 // ==========================================
-// GET ALL SERVICES (Public - with filters)
+// GET ALL SERVICES (Public)
 // ==========================================
 const getAllServices = async (req, res) => {
   try {
     const { 
+      page = 1, 
+      limit = 12, 
       category, 
-      minPrice, 
-      maxPrice, 
-      search,
-      location,
-      sortBy = 'createdAt',
+      search, 
+      sortBy = 'createdAt', 
       order = 'desc',
-      page = 1,
-      limit = 12
+      minPrice,
+      maxPrice
     } = req.query;
 
-    // Build filter conditions
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    // Build where clause
     const where = {
       isActive: true
     };
@@ -108,34 +61,20 @@ const getAllServices = async (req, res) => {
       where.category = category;
     }
 
+    if (search) {
+      where.OR = [
+        { serviceName: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price.gte = parseFloat(minPrice);
       if (maxPrice) where.price.lte = parseFloat(maxPrice);
     }
 
-    // Location filter - filter by provider's user location
-    if (location) {
-      where.provider = {
-        user: {
-          location: { contains: location, mode: 'insensitive' }
-        }
-      };
-    }
-
-    if (search) {
-      where.OR = [
-        { serviceName: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { category: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = parseInt(limit);
-
-    // Get services with provider info
+    // Get services with pagination
     const [services, total] = await Promise.all([
       prisma.service.findMany({
         where,
@@ -147,7 +86,7 @@ const getAllServices = async (req, res) => {
                   firstName: true,
                   lastName: true,
                   location: true,
-                  avatar: true
+                  profilePicture: true
                 }
               }
             }
@@ -189,12 +128,12 @@ const getServiceById = async (req, res) => {
           include: {
             user: {
               select: {
-                id: true,
                 firstName: true,
                 lastName: true,
                 location: true,
+                profilePicture: true,
                 phone: true,
-                avatar: true
+                email: true
               }
             },
             reviews: {
@@ -226,28 +165,43 @@ const getServiceById = async (req, res) => {
 };
 
 // ==========================================
-// GET MY SERVICES (Provider only)
+// GET MY SERVICES (Provider)
 // ==========================================
 const getMyServices = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const provider = await prisma.provider.findUnique({
-      where: { userId },
-      include: {
-        services: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
+    // Get or create provider profile
+    let provider = await prisma.provider.findUnique({
+      where: { userId }
     });
 
+    // If no provider profile, return empty array (user hasn't created services yet)
     if (!provider) {
-      return okResponse(res, 'No services found', { services: [] });
+      return okResponse(res, 'No services yet', { services: [] });
     }
 
-    return okResponse(res, 'My services retrieved successfully', { 
-      services: provider.services 
+    const services = await prisma.service.findMany({
+      where: { providerId: provider.id },
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: { bookings: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
     });
+
+    return okResponse(res, 'Services retrieved successfully', { services });
   } catch (error) {
     console.error('Get my services error:', error);
     return serverErrorResponse(res, 'Failed to retrieve services');
@@ -255,13 +209,87 @@ const getMyServices = async (req, res) => {
 };
 
 // ==========================================
-// UPDATE SERVICE (Provider only)
+// CREATE SERVICE (Provider)
+// ==========================================
+const createService = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { serviceName, category, description, price, duration, imageUrl } = req.body;
+
+    // Validate required fields
+    if (!serviceName || !category || !price) {
+      return badRequestResponse(res, 'Service name, category, and price are required');
+    }
+
+    // Validate price
+    if (isNaN(price) || parseFloat(price) < 0) {
+      return badRequestResponse(res, 'Invalid price');
+    }
+
+    // Get or create provider profile
+    let provider = await prisma.provider.findUnique({
+      where: { userId }
+    });
+
+    if (!provider) {
+      // Create provider profile if doesn't exist
+      provider = await prisma.provider.create({
+        data: {
+          userId,
+          bio: '',
+          rating: 0,
+          totalBookings: 0
+        }
+      });
+
+      // Update user role to PROVIDER if not already
+      await prisma.user.update({
+        where: { id: userId },
+        data: { role: 'PROVIDER' }
+      });
+    }
+
+    // Create service
+    const service = await prisma.service.create({
+      data: {
+        providerId: provider.id,
+        serviceName,
+        category,
+        description: description || '',
+        price: parseFloat(price),
+        duration: parseInt(duration) || 60,
+        imageUrl: imageUrl || null,
+        isActive: true
+      },
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return createdResponse(res, 'Service created successfully', { service });
+  } catch (error) {
+    console.error('Create service error:', error);
+    return serverErrorResponse(res, 'Failed to create service');
+  }
+};
+
+// ==========================================
+// UPDATE SERVICE (Provider)
 // ==========================================
 const updateService = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const { serviceName, category, description, price, duration, isActive, image } = req.body;
+    const updates = req.body;
 
     // Get provider
     const provider = await prisma.provider.findUnique({
@@ -269,38 +297,51 @@ const updateService = async (req, res) => {
     });
 
     if (!provider) {
-      return notFoundResponse(res, 'Provider profile not found');
+      return forbiddenResponse(res, 'Provider profile not found');
     }
 
-    // Check if service belongs to this provider
-    const existingService = await prisma.service.findFirst({
-      where: { id, providerId: provider.id }
+    // Find service and verify ownership
+    const service = await prisma.service.findUnique({
+      where: { id }
     });
 
-    if (!existingService) {
-      return notFoundResponse(res, 'Service not found or unauthorized');
+    if (!service) {
+      return notFoundResponse(res, 'Service not found');
     }
 
-    // Validate image size if provided (max 2MB)
-    if (image && image.length > 2 * 1024 * 1024) {
-      return badRequestResponse(res, 'Image size must be less than 2MB');
+    if (service.providerId !== provider.id) {
+      return forbiddenResponse(res, 'You can only update your own services');
     }
+
+    // Build update data
+    const updateData = {};
+    if (updates.serviceName !== undefined) updateData.serviceName = updates.serviceName;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.price !== undefined) updateData.price = parseFloat(updates.price);
+    if (updates.duration !== undefined) updateData.duration = parseInt(updates.duration);
+    if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl;
+    if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
 
     // Update service
-    const service = await prisma.service.update({
+    const updatedService = await prisma.service.update({
       where: { id },
-      data: {
-        ...(serviceName && { serviceName }),
-        ...(category && { category }),
-        ...(description !== undefined && { description }),
-        ...(price && { price: parseFloat(price) }),
-        ...(duration && { duration: parseInt(duration) }),
-        ...(isActive !== undefined && { isActive }),
-        ...(image !== undefined && { image: image || null })
+      data: updateData,
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
       }
     });
 
-    return okResponse(res, 'Service updated successfully', { service });
+    return okResponse(res, 'Service updated successfully', { service: updatedService });
   } catch (error) {
     console.error('Update service error:', error);
     return serverErrorResponse(res, 'Failed to update service');
@@ -308,7 +349,7 @@ const updateService = async (req, res) => {
 };
 
 // ==========================================
-// DELETE SERVICE (Provider only)
+// DELETE SERVICE (Provider)
 // ==========================================
 const deleteService = async (req, res) => {
   try {
@@ -321,22 +362,37 @@ const deleteService = async (req, res) => {
     });
 
     if (!provider) {
-      return notFoundResponse(res, 'Provider profile not found');
+      return forbiddenResponse(res, 'Provider profile not found');
     }
 
-    // Check if service belongs to this provider
-    const existingService = await prisma.service.findFirst({
-      where: { id, providerId: provider.id }
+    // Find service and verify ownership
+    const service = await prisma.service.findUnique({
+      where: { id }
     });
 
-    if (!existingService) {
-      return notFoundResponse(res, 'Service not found or unauthorized');
+    if (!service) {
+      return notFoundResponse(res, 'Service not found');
     }
 
-    // Soft delete - set isActive to false
-    await prisma.service.update({
-      where: { id },
-      data: { isActive: false }
+    if (service.providerId !== provider.id) {
+      return forbiddenResponse(res, 'You can only delete your own services');
+    }
+
+    // Check for active bookings
+    const activeBookings = await prisma.booking.count({
+      where: {
+        serviceId: id,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      }
+    });
+
+    if (activeBookings > 0) {
+      return badRequestResponse(res, 'Cannot delete service with active bookings');
+    }
+
+    // Delete service
+    await prisma.service.delete({
+      where: { id }
     });
 
     return okResponse(res, 'Service deleted successfully');
@@ -347,39 +403,11 @@ const deleteService = async (req, res) => {
 };
 
 // ==========================================
-// GET SERVICE CATEGORIES (Public)
+// GET CATEGORIES (Public)
 // ==========================================
 const getCategories = async (req, res) => {
   try {
-    const categories = await prisma.service.groupBy({
-      by: ['category'],
-      where: { isActive: true },
-      _count: { category: true }
-    });
-
-    // Student-focused categories
-    const defaultCategories = [
-      'Tutoring',
-      'Essay Help',
-      'Tech Support',
-      'Haircuts',
-      'Food Delivery',
-      'Moving Help',
-      'Photography',
-      'Design Work',
-      'Laundry',
-      'Cleaning',
-      'Fitness',
-      'Music Lessons',
-      'Language Lessons',
-      'Other'
-    ];
-
-    return okResponse(res, 'Categories retrieved successfully', { 
-      categories: categories.map(c => ({
-        name: c.category,
-        count: c._count.category
-      })),
+    return okResponse(res, 'Categories retrieved successfully', {
       defaultCategories
     });
   } catch (error) {
@@ -389,10 +417,10 @@ const getCategories = async (req, res) => {
 };
 
 module.exports = {
-  createService,
   getAllServices,
   getServiceById,
   getMyServices,
+  createService,
   updateService,
   deleteService,
   getCategories

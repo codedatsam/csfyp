@@ -25,12 +25,12 @@ router.get('/categories', getCategories);
 // Protected routes - must come BEFORE /:id to avoid conflicts
 router.get('/my-services', protect, getMyServices);
 router.get('/provider/my-services', protect, getMyServices); // Alias for backwards compatibility
-router.post('/', protect, authorize('PROVIDER'), createService);
+router.post('/', protect, createService); // Anyone can create services (they become provider)
 
 // Dynamic routes with :id
 router.get('/:id', getServiceById);
-router.put('/:id', protect, authorize('PROVIDER'), updateService);
-router.patch('/:id', protect, authorize('PROVIDER'), updateService);
-router.delete('/:id', protect, authorize('PROVIDER'), deleteService);
+router.put('/:id', protect, updateService); // Owner check in controller
+router.patch('/:id', protect, updateService); // Owner check in controller
+router.delete('/:id', protect, deleteService); // Owner check in controller
 
 module.exports = router;

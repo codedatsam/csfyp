@@ -1,11 +1,11 @@
 // ==========================================
-// NAVBAR COMPONENT (FIXED)
+// NAVBAR COMPONENT (IMPROVED)
 // ==========================================
 // Author: Samson Fabiyi
-// Description: Navigation bar with centered notification panel on mobile
+// Description: Navigation bar with real-time notifications and toast alerts
 // ==========================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, 
@@ -19,10 +19,12 @@ import {
   Calendar,
   Star,
   ChevronDown,
-  UserPlus
+  UserPlus,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -33,15 +35,107 @@ function Navbar() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [lastNotificationId, setLastNotificationId] = useState(null);
   
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
 
+  // Fetch notifications
+  const fetchNotifications = useCallback(async (showToast = false) => {
+    try {
+      const response = await api.get('/notifications');
+      if (response.success) {
+        const newNotifications = response.data.notifications || [];
+        const newUnreadCount = response.data.unreadCount || 0;
+        
+        // Check for new notifications and show toast
+        if (showToast && newNotifications.length > 0) {
+          const latestNotification = newNotifications[0];
+          if (lastNotificationId && latestNotification.id !== lastNotificationId && !latestNotification.isRead) {
+            // Show toast for new notification
+            showNotificationToast(latestNotification);
+          }
+        }
+        
+        // Update state
+        setNotifications(newNotifications);
+        setUnreadCount(newUnreadCount);
+        if (newNotifications.length > 0) {
+          setLastNotificationId(newNotifications[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  }, [lastNotificationId]);
+
+  // Show toast notification
+  const showNotificationToast = (notification) => {
+    const icon = getNotificationToastIcon(notification.type);
+    toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? 'animate-enter' : 'animate-leave'
+        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+      >
+        <div className="flex-1 w-0 p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 pt-0.5">
+              {icon}
+            </div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-gray-900">
+                {notification.title || 'New Notification'}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {notification.message}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex border-l border-gray-200">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              navigate('/dashboard/my-bookings');
+            }}
+            className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-primary-600 hover:text-primary-500 focus:outline-none"
+          >
+            View
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000 });
+  };
+
+  const getNotificationToastIcon = (type) => {
+    switch (type) {
+      case 'NEW_BOOKING':
+        return <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center"><Calendar className="h-5 w-5 text-blue-600" /></div>;
+      case 'BOOKING_CONFIRMED':
+        return <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"><CheckCircle className="h-5 w-5 text-green-600" /></div>;
+      case 'BOOKING_CANCELLED':
+        return <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center"><X className="h-5 w-5 text-red-600" /></div>;
+      case 'NEW_REVIEW':
+        return <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center"><Star className="h-5 w-5 text-yellow-600" /></div>;
+      default:
+        return <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><Bell className="h-5 w-5 text-gray-600" /></div>;
+    }
+  };
+
+  // Initial fetch and polling
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      fetchNotifications(false); // Initial fetch without toast
+      
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(() => {
+        fetchNotifications(true); // Subsequent fetches with toast
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -57,22 +151,10 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await api.get('/notifications');
-      if (response.success) {
-        setNotifications(response.data.notifications || []);
-        setUnreadCount(response.data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    }
-  };
-
   const markAsRead = async (notificationId) => {
     try {
       await api.put(`/notifications/${notificationId}/read`);
-      fetchNotifications();
+      fetchNotifications(false);
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -81,7 +163,7 @@ function Navbar() {
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
-      fetchNotifications();
+      fetchNotifications(false);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
     }
