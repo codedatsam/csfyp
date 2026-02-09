@@ -22,6 +22,9 @@ const authRoutes = require('./routes/auth');
 const servicesRoutes = require('./routes/services');
 const bookingsRoutes = require('./routes/bookings');
 const notificationsRoutes = require('./routes/notifications');
+const reviewsRoutes = require('./routes/reviews');
+const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -196,6 +199,15 @@ app.use('/api/v1/bookings', bookingsRoutes);
 
 // Mount notifications routes
 app.use('/api/v1/notifications', notificationsRoutes);
+
+// Mount reviews routes
+app.use('/api/v1/reviews', reviewsRoutes);
+
+// Mount admin routes
+app.use('/api/v1/admin', adminRoutes);
+
+// Mount analytics routes
+app.use('/api/v1/analytics', analyticsRoutes);
 
 // ==========================================
 // ERROR HANDLING
