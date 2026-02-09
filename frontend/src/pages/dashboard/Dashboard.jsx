@@ -45,7 +45,7 @@ function Dashboard() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1521790361441-89f3b0e2e71e?w=1600')"
+            backgroundImage: "url('https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600')"
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/90 to-purple-600/80" />

@@ -20,28 +20,29 @@ import {
   ToggleRight,
   UserPlus,
   Loader2,
-  X
+  X,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 import BookForClient from '../../components/BookForClient';
+import ImageUpload from '../../components/common/ImageUpload';
+import LocationAutocomplete from '../../components/common/LocationAutocomplete';
 
 const defaultCategories = [
+  'Hair & Beauty',
+  'Fitness & Gym',
   'Tutoring',
-  'Essay Help',
   'Tech Support',
-  'Haircuts',
-  'Food Delivery',
-  'Moving Help',
   'Photography',
   'Design Work',
-  'Laundry',
   'Cleaning',
-  'Fitness',
   'Music Lessons',
   'Language Lessons',
+  'Food & Catering',
+  'Moving Help',
   'Other'
 ];
 
@@ -66,7 +67,9 @@ function MyServices() {
     category: '',
     description: '',
     price: '',
-    duration: '60'
+    duration: '60',
+    image: '',
+    location: ''
   });
 
   useEffect(() => {
@@ -134,7 +137,9 @@ function MyServices() {
       category: '',
       description: '',
       price: '',
-      duration: '60'
+      duration: '60',
+      image: '',
+      location: user?.location || ''
     });
     setShowServiceModal(true);
   };
@@ -147,7 +152,9 @@ function MyServices() {
       category: service.category,
       description: service.description || '',
       price: service.price.toString(),
-      duration: service.duration.toString()
+      duration: service.duration.toString(),
+      image: service.image || '',
+      location: service.location || ''
     });
     setShowServiceModal(true);
   };
@@ -161,7 +168,9 @@ function MyServices() {
       category: '',
       description: '',
       price: '',
-      duration: '60'
+      duration: '60',
+      image: '',
+      location: ''
     });
   };
 
@@ -609,6 +618,36 @@ function MyServices() {
                     <option value="120">2 hours</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <MapPin className="inline h-4 w-4 mr-1" />
+                  Location
+                </label>
+                <LocationAutocomplete
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Enter service location..."
+                />
+              </div>
+
+              {/* Service Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Service Image
+                </label>
+                <ImageUpload
+                  value={formData.image}
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  type="service"
+                  placeholder="Upload service image"
+                  previewSize="lg"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Add an image to make your service stand out
+                </p>
               </div>
 
               {/* Actions */}
