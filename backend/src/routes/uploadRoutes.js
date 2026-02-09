@@ -7,7 +7,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const { okResponse, badRequestResponse, serverErrorResponse } = require('../utils/response');
 
 // Try to load cloudinary, but don't fail if not installed
@@ -22,7 +22,7 @@ try {
 // ==========================================
 // UPLOAD GENERIC IMAGE
 // ==========================================
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { image, type } = req.body;
 
@@ -73,7 +73,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // ==========================================
 // UPLOAD PROFILE IMAGE
 // ==========================================
-router.post('/profile', authenticateToken, async (req, res) => {
+router.post('/profile', authenticate, async (req, res) => {
   try {
     const { image } = req.body;
 
@@ -100,7 +100,7 @@ router.post('/profile', authenticateToken, async (req, res) => {
 // ==========================================
 // UPLOAD SERVICE IMAGE
 // ==========================================
-router.post('/service', authenticateToken, async (req, res) => {
+router.post('/service', authenticate, async (req, res) => {
   try {
     const { image } = req.body;
 
@@ -127,7 +127,7 @@ router.post('/service', authenticateToken, async (req, res) => {
 // ==========================================
 // UPLOAD BUSINESS IMAGE
 // ==========================================
-router.post('/business', authenticateToken, async (req, res) => {
+router.post('/business', authenticate, async (req, res) => {
   try {
     const { image } = req.body;
 
