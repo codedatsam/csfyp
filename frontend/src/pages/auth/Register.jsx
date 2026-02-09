@@ -9,53 +9,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { UserPlus, Mail, Lock, User, Phone, MapPin, Loader2, Sparkles, Heart, Coffee, X } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Phone, Loader2, Heart, Coffee, X } from 'lucide-react';
 import api from '../../services/api';
-
-// All available UK locations
-const UK_LOCATIONS = [
-  // Major Cities
-  'London',
-  'Manchester',
-  'Birmingham',
-  'Leeds',
-  'Liverpool',
-  'Bristol',
-  'Sheffield',
-  'Newcastle',
-  'Nottingham',
-  'Leicester',
-  // Major Cities
-  'Hatfield',
-  'St Albans',
-  'Cambridge',
-  'Oxford',
-  'Brighton',
-  'Southampton',
-  'Reading',
-  'Coventry',
-  'Cardiff',
-  'Edinburgh',
-  'Glasgow',
-  'Belfast',
-  'York',
-  'Bath',
-  'Durham',
-  'Exeter',
-  'Norwich',
-  'Warwick',
-  'Lancaster',
-  'Loughborough',
-  // More Locations
-  'Welwyn Garden City',
-  'Stevenage',
-  'Watford',
-  'Hemel Hempstead',
-  'Hertford',
-  'Bishops Stortford',
-  // Other
-  'Other'
-].sort();
+import LocationAutocomplete from '../../components/common/LocationAutocomplete';
 
 function Register() {
   const navigate = useNavigate();
@@ -402,28 +358,17 @@ function Register() {
                 </div>
               </div>
 
-              {/* Location - Now Required with Dropdown */}
+              {/* Location - Autocomplete */}
               <div>
                 <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                   Location *
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className={`input pl-10 ${errors.location ? 'input-error' : ''}`}
-                  >
-                    <option value="">Select your location</option>
-                    {UK_LOCATIONS.map(loc => (
-                      <option key={loc} value={loc}>{loc}</option>
-                    ))}
-                  </select>
-                </div>
+                <LocationAutocomplete
+                  value={formData.location}
+                  onChange={handleChange}
+                  error={errors.location}
+                  placeholder="Start typing your city..."
+                />
                 {errors.location && (
                   <p className="error-text">{errors.location}</p>
                 )}

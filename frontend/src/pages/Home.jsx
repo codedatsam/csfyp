@@ -21,6 +21,7 @@ import {
   Coffee
 } from 'lucide-react';
 import api from '../services/api';
+import { useSEO } from '../hooks/useSEO';
 
 // Service images for background
 const SERVICE_IMAGES = [
@@ -33,6 +34,11 @@ const SERVICE_IMAGES = [
 ];
 
 function Home() {
+  // SEO
+  useSEO({
+    title: 'Book Local Services | Hair, Beauty, Fitness & More',
+    description: 'Find and book trusted local service providers instantly. Hair stylists, personal trainers, photographers, tutors and more. Fast, secure booking across the UK.',
+  });
   const [featuredServices, setFeaturedServices] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 

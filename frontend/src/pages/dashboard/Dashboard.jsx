@@ -40,8 +40,31 @@ function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
+      {/* Hero Banner with Background Image */}
+      <div className="relative h-48 md:h-64 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1521790361441-89f3b0e2e71e?w=1600')"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/90 to-purple-600/80" />
+        <div className="relative z-10 h-full container-custom flex items-center">
+          <div className="text-white">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              Welcome back, {user?.firstName}! 👋
+            </h1>
+            <p className="text-white/80 text-lg">
+              {user?.role === 'PROVIDER' 
+                ? "Manage your services and grow your business" 
+                : "Discover and book amazing services"}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="container-custom py-8">
+      <main className="container-custom py-8 -mt-8 relative z-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Profile Card */}

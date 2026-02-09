@@ -1,0 +1,19 @@
+# Husleflow Robots.txt
+# https://husleflow.com
+
+User-agent: *
+Allow: /
+Allow: /services
+Allow: /login
+Allow: /register
+
+# Disallow private areas
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api
+
+# Sitemap location
+Sitemap: https://husleflow.com/sitemap.xml
+
+# Crawl delay for politeness
+Crawl-delay: 1

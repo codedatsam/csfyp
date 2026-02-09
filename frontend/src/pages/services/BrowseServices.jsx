@@ -25,6 +25,7 @@ import {
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
+import { useSEO } from '../../hooks/useSEO';
 
 // UK Cities - Organized by region for easy browsing
 const UK_REGIONS = {
@@ -92,6 +93,12 @@ const PRICE_RANGES = [
 ];
 
 function BrowseServices() {
+  // SEO
+  useSEO({
+    title: 'Browse Services - Find Local Professionals',
+    description: 'Browse and book services from verified local professionals. Hair styling, fitness training, tutoring, photography and more across the UK.',
+  });
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
