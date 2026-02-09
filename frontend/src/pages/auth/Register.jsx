@@ -25,7 +25,7 @@ const UK_LOCATIONS = [
   'Newcastle',
   'Nottingham',
   'Leicester',
-  // University Towns
+  // Major Cities
   'Hatfield',
   'St Albans',
   'Cambridge',
@@ -46,7 +46,7 @@ const UK_LOCATIONS = [
   'Warwick',
   'Lancaster',
   'Loughborough',
-  // Hertfordshire Areas
+  // More Locations
   'Welwyn Garden City',
   'Stevenage',
   'Watford',
@@ -191,7 +191,7 @@ function Register() {
             Husleflow
           </h1>
           <h2 className="text-3xl font-bold text-gray-900">
-            Join the Campus Hustle
+            Join Husleflow
           </h2>
           <p className="mt-2 text-gray-600">
             Buy and sell services with fellow students — all in one place
@@ -269,7 +269,7 @@ function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
-                  placeholder="you@university.ac.uk"
+                  placeholder="you@email.com"
                 />
               </div>
               {errors.email && (

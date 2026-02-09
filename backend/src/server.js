@@ -4,8 +4,6 @@
 // Description: Main Express.js server with authentication
 // Author: Samson Fabiyi (22065067)
 // Project: BSc Computer Science Final Year
-// University: University of Hertfordshire
-// Supervisor: Dr. Barry Nichols
 // Date: November 2024
 // ==========================================
 
@@ -155,14 +153,10 @@ function formatUptime(seconds) {
 // API welcome route
 app.get('/api/v1', (req, res) => {
   res.json({ 
-    message: 'Welcome to Hustleflow API v1',
-    description: 'Booking system for vocational services',
+    message: 'Welcome to Husleflow API v1',
+    description: 'Professional service booking platform',
     version: '1.0.0',
     author: 'Samson Fabiyi',
-    studentId: '22065067',
-    university: 'University of Hertfordshire',
-    project: 'BSc Computer Science Final Year Project',
-    supervisor: 'Dr. Barry Nichols',
     technologies: {
       backend: 'Node.js + Express.js',
       database: 'PostgreSQL (Supabase)',
@@ -175,15 +169,8 @@ app.get('/api/v1', (req, res) => {
       detailedHealth: '/health/detailed',
       api: '/api/v1',
       authentication: '/api/v1/auth',
-      docs: '/api/v1/docs (coming soon)'
-    },
-    availableRoutes: {
-      'POST /api/v1/auth/register': 'Register new user',
-      'POST /api/v1/auth/login': 'Login user',
-      'GET /api/v1/auth/profile': 'Get user profile (protected)',
-      'PATCH /api/v1/auth/profile': 'Update user profile (protected)',
-      'POST /api/v1/auth/change-password': 'Change password (protected)',
-      'POST /api/v1/auth/logout': 'Logout user (protected)'
+      services: '/api/v1/services',
+      bookings: '/api/v1/bookings'
     }
   });
 });

@@ -88,7 +88,7 @@ function Dashboard() {
                 <div className="flex items-center gap-3 text-gray-600">
                   <MapPin className="h-5 w-5 text-gray-400" />
                   <div>
-                    <p className="text-xs text-gray-500">Campus / Hall</p>
+                    <p className="text-xs text-gray-500">Location</p>
                     <p className="font-medium text-gray-900">{user?.location || 'Not provided'}</p>
                   </div>
                 </div>
@@ -208,7 +208,7 @@ function Dashboard() {
               </h4>
               <p className="text-sm text-white/90">
                 {user?.role === 'PROVIDER' || user?.role === 'ADMIN'
-                  ? "Manage your services, track bookings, and grow your business on campus."
+                  ? "Manage your services, track bookings, and grow your business with Husleflow."
                   : "Browse services from fellow students, book appointments, and get things done!"}
               </p>
             </div>
@@ -219,9 +219,18 @@ function Dashboard() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="container-custom py-6">
-          <p className="text-center text-sm text-gray-600">
-            © {new Date().getFullYear()} Husleflow - University of Hertfordshire
-          </p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Made with</span>
+              <span className="text-red-500">❤️</span>
+              <span>&</span>
+              <span>☕</span>
+              <span>by Husleflow</span>
+            </div>
+            <p className="text-xs text-gray-400">
+              © {new Date().getFullYear()} Husleflow. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

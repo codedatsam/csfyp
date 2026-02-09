@@ -173,7 +173,7 @@ function Login() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
-                  placeholder="you@university.ac.uk"
+                  placeholder="you@email.com"
                 />
               </div>
               {errors.email && (
