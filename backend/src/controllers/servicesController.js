@@ -86,7 +86,7 @@ const getAllServices = async (req, res) => {
                   firstName: true,
                   lastName: true,
                   location: true,
-                  profilePicture: true
+                  avatar: true
                 }
               }
             }
@@ -131,7 +131,7 @@ const getServiceById = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 location: true,
-                profilePicture: true,
+                avatar: true,
                 phone: true,
                 email: true
               }
@@ -265,7 +265,7 @@ const createService = async (req, res) => {
         description: description || '',
         price: parseFloat(price),
         duration: parseInt(duration) || 60,
-        imageUrl: imageUrl || null,
+        image: imageUrl || null,
         isActive: true
       },
       include: {
@@ -327,7 +327,8 @@ const updateService = async (req, res) => {
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.price !== undefined) updateData.price = parseFloat(updates.price);
     if (updates.duration !== undefined) updateData.duration = parseInt(updates.duration);
-    if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl;
+    if (updates.imageUrl !== undefined) updateData.image = updates.imageUrl;
+    if (updates.image !== undefined) updateData.image = updates.image;
     if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
 
     // Update service
