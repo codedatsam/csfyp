@@ -82,12 +82,14 @@ model Service {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   image       String?
+  location    String?
   bookings    Booking[]
   provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@index([providerId])
   @@index([category])
   @@index([isActive])
+  @@index([location])
   @@map("services")
 }
 

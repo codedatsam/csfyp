@@ -20,7 +20,8 @@ const {
   sendBookingCreatedForClientEmail,
   sendBookingCancelledEmail,
   sendBookingCompletedEmail,
-  sendExternalBookingEmail
+  sendExternalBookingEmail,
+  sendReceiptEmail
 } = require('../services/emailService');
 
 // ==========================================
@@ -375,7 +376,7 @@ const createBookingForGuest = async (req, res) => {
       console.error('Failed to create notification:', notifError);
     }
 
-    // Send email to guest
+    // Send email to guest (CC to provider)
     let emailSent = false;
     try {
       const emailResult = await sendExternalBookingEmail(
@@ -388,11 +389,12 @@ const createBookingForGuest = async (req, res) => {
           price: service.price,
           notes: notes
         },
-        `${provider.user.firstName} ${provider.user.lastName}`
+        `${provider.user.firstName} ${provider.user.lastName}`,
+        provider.user.email // CC to provider
       );
       
       if (emailResult.success) {
-        console.log(`📧 Guest booking email sent to ${guestEmail}`);
+        console.log(`📧 Guest booking email sent to ${guestEmail} (CC: ${provider.user.email})`);
         emailSent = true;
       } else {
         console.error(`❌ Email failed for ${guestEmail}:`, emailResult.error);
@@ -680,10 +682,18 @@ const updateBookingStatus = async (req, res) => {
             updatedBooking
           );
         } else if (status === 'COMPLETED') {
+          // Send completion email
           await sendBookingCompletedEmail(
             booking.client.email,
             booking.client.firstName,
             updatedBooking
+          );
+          // Also send receipt
+          await sendReceiptEmail(
+            booking.client.email,
+            booking.client.firstName,
+            updatedBooking,
+            `${provider.user.firstName} ${provider.user.lastName}`
           );
         } else if (status === 'CANCELLED') {
           await sendBookingCancelledEmail(

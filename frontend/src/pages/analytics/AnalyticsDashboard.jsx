@@ -31,21 +31,37 @@ function AnalyticsDashboard() {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState(user?.role === 'PROVIDER' ? 'provider' : 'client');
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [viewMode]);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/analytics/provider');
+      // Fetch based on view mode (provider or client)
+      const endpoint = viewMode === 'provider' ? '/analytics/provider' : '/analytics/client';
+      const response = await api.get(endpoint);
       if (response.success) {
         setAnalytics(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
-      toast.error('Failed to load analytics');
+      // If provider analytics fails, try client
+      if (viewMode === 'provider') {
+        try {
+          const clientResponse = await api.get('/analytics/client');
+          if (clientResponse.success) {
+            setAnalytics(clientResponse.data);
+            setViewMode('client');
+          }
+        } catch (e) {
+          toast.error('Failed to load analytics');
+        }
+      } else {
+        toast.error('Failed to load analytics');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,10 +85,172 @@ function AnalyticsDashboard() {
         <div className="container-custom py-12 text-center">
           <BarChart3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 mb-2">No Analytics Available</h2>
-          <p className="text-gray-500 mb-4">Start offering services to see your analytics!</p>
-          <Link to="/dashboard/my-services" className="btn btn-primary">
-            Create a Service
+          <p className="text-gray-500 mb-4">
+            {viewMode === 'provider' 
+              ? 'Start offering services to see your analytics!'
+              : 'Start booking services to see your spending analytics!'}
+          </p>
+          <Link to={viewMode === 'provider' ? '/dashboard/my-services' : '/services'} className="btn btn-primary">
+            {viewMode === 'provider' ? 'Create a Service' : 'Browse Services'}
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Client Analytics View
+  if (viewMode === 'client') {
+    const { overview, spendingByCategory, recentBookings } = analytics;
+    
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        
+        {/* Header */}
+        <div className="bg-white border-b">
+          <div className="container-custom py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  My Spending Analytics 💰
+                </h1>
+                <p className="text-gray-600">Track your bookings and spending</p>
+              </div>
+              {user?.role === 'PROVIDER' && (
+                <button
+                  onClick={() => setViewMode('provider')}
+                  className="btn btn-secondary"
+                >
+                  View Provider Analytics
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="container-custom py-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Total Spent</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    £{overview.totalSpent?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-full">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Total Bookings</p>
+                  <p className="text-2xl font-bold text-gray-900">{overview.totalBookings || 0}</p>
+                </div>
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <Calendar className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Completed</p>
+                  <p className="text-2xl font-bold text-gray-900">{overview.completedBookings || 0}</p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Pending</p>
+                  <p className="text-2xl font-bold text-gray-900">{overview.pendingBookings || 0}</p>
+                </div>
+                <div className="bg-yellow-100 p-3 rounded-full">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Spending by Category */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-primary-600" />
+                Spending by Category
+              </h3>
+              {!spendingByCategory || Object.keys(spendingByCategory).length === 0 ? (
+                <p className="text-gray-500 text-sm">No completed bookings yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(spendingByCategory).slice(0, 5).map(([category, amount], index) => {
+                    const colors = ['bg-primary-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500'];
+                    const totalSpending = Object.values(spendingByCategory).reduce((a, b) => a + b, 0);
+                    const percentage = totalSpending > 0 ? (amount / totalSpending) * 100 : 0;
+                    return (
+                      <div key={category}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-gray-700 truncate">{category}</span>
+                          <span className="text-gray-900 font-medium">£{amount.toFixed(2)}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${colors[index % colors.length]}`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Bookings */}
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Recent Bookings</h3>
+                <Link to="/dashboard/my-bookings" className="text-sm text-primary-600 hover:text-primary-700">
+                  View all →
+                </Link>
+              </div>
+              {!recentBookings || recentBookings.length === 0 ? (
+                <p className="text-gray-500 text-sm">No bookings yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentBookings.slice(0, 5).map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{booking.serviceName}</p>
+                        <p className="text-xs text-gray-500">{booking.providerName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900">£{booking.amount?.toFixed(2)}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          booking.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                          booking.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
+                          booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -87,10 +265,20 @@ function AnalyticsDashboard() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container-custom py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Analytics Dashboard 📊
-          </h1>
-          <p className="text-gray-600">Track your earnings and performance</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Analytics Dashboard 📊
+              </h1>
+              <p className="text-gray-600">Track your earnings and performance</p>
+            </div>
+            <button
+              onClick={() => setViewMode('client')}
+              className="btn btn-secondary"
+            >
+              View My Spending
+            </button>
+          </div>
         </div>
       </div>
 

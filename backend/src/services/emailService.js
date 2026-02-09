@@ -36,17 +36,17 @@ const getEmailTemplate = (content, title = 'Husleflow') => `
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5; }
     .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .header { background: linear-gradient(135deg, #0891B2 0%, #7C3AED 100%); padding: 30px; text-align: center; }
     .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
     .content { padding: 40px 30px; }
     .footer { background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb; }
     .footer p { color: #6b7280; font-size: 12px; margin: 5px 0; }
-    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #0891B2 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
     .btn:hover { opacity: 0.9; }
-    .code { font-size: 32px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .code { font-size: 32px; font-weight: bold; color: #0891B2; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
     .info-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0; }
     .info-box.warning { background-color: #fef3c7; border-color: #fcd34d; }
-    .info-box.primary { background-color: #eef2ff; border-color: #c7d2fe; }
+    .info-box.primary { background-color: #ecfeff; border-color: #a5f3fc; }
     .booking-details { background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
     .booking-details table { width: 100%; border-collapse: collapse; }
     .booking-details td { padding: 8px 0; }
@@ -57,6 +57,9 @@ const getEmailTemplate = (content, title = 'Husleflow') => `
     .status-confirmed { background-color: #d1fae5; color: #065f46; }
     .status-completed { background-color: #dbeafe; color: #1e40af; }
     .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    .receipt { border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 20px 0; }
+    .receipt-header { border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 16px; }
+    .receipt-total { border-top: 2px solid #0891B2; padding-top: 16px; margin-top: 16px; font-size: 18px; }
   </style>
 </head>
 <body>
@@ -69,7 +72,7 @@ const getEmailTemplate = (content, title = 'Husleflow') => `
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} Husleflow. All rights reserved.</p>
-      <p>Student Services Marketplace</p>
+      <p>Your Local Services Marketplace</p>
     </div>
   </div>
 </body>
@@ -87,22 +90,22 @@ const getGuestEmailTemplate = (content, title = 'Husleflow') => `
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5; }
     .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .header { background: linear-gradient(135deg, #0891B2 0%, #7C3AED 100%); padding: 30px; text-align: center; }
     .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
     .content { padding: 40px 30px; }
-    .promo-section { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 30px; text-align: center; }
+    .promo-section { background: linear-gradient(135deg, #0891B2 0%, #7C3AED 100%); padding: 30px; text-align: center; }
     .promo-section h2 { color: #ffffff; margin: 0 0 10px 0; font-size: 22px; }
     .promo-section p { color: #e0e7ff; margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; }
-    .promo-btn { display: inline-block; padding: 12px 24px; background-color: #ffffff; color: #4F46E5; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 5px; }
+    .promo-btn { display: inline-block; padding: 12px 24px; background-color: #ffffff; color: #0891B2; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 5px; }
     .promo-btn:hover { opacity: 0.9; }
     .promo-btn.secondary { background-color: transparent; border: 2px solid #ffffff; color: #ffffff; }
     .footer { background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb; }
     .footer p { color: #6b7280; font-size: 12px; margin: 5px 0; }
-    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
-    .code { font-size: 32px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #0891B2 0%, #7C3AED 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .code { font-size: 32px; font-weight: bold; color: #0891B2; letter-spacing: 4px; background-color: #f3f4f6; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 20px 0; }
     .info-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0; }
     .info-box.warning { background-color: #fef3c7; border-color: #fcd34d; }
-    .info-box.primary { background-color: #eef2ff; border-color: #c7d2fe; }
+    .info-box.primary { background-color: #ecfeff; border-color: #a5f3fc; }
     .booking-details { background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
     .booking-details table { width: 100%; border-collapse: collapse; }
     .booking-details td { padding: 8px 0; }
@@ -111,6 +114,9 @@ const getGuestEmailTemplate = (content, title = 'Husleflow') => `
     .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; }
     .status-confirmed { background-color: #d1fae5; color: #065f46; }
     .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    .receipt { border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin: 20px 0; }
+    .receipt-header { border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 16px; }
+    .receipt-total { border-top: 2px solid #0891B2; padding-top: 16px; margin-top: 16px; font-size: 18px; }
   </style>
 </head>
 <body>
@@ -126,7 +132,7 @@ const getGuestEmailTemplate = (content, title = 'Husleflow') => `
     <div class="promo-section">
       <h2>🚀 Join Husleflow Today!</h2>
       <p>
-        Discover more amazing services from talented students, or become a service provider yourself and start earning!
+        Discover more amazing services from talented professionals, or become a service provider yourself and start earning!
       </p>
       <div>
         <a href="${FRONTEND_URL}/register" class="promo-btn">Create Free Account</a>
@@ -136,11 +142,11 @@ const getGuestEmailTemplate = (content, title = 'Husleflow') => `
     
     <div class="footer">
       <p>© ${new Date().getFullYear()} Husleflow. All rights reserved.</p>
-      <p>Student Services Marketplace</p>
+      <p>Your Local Services Marketplace</p>
       <p style="margin-top: 10px;">
-        <a href="${FRONTEND_URL}" style="color: #4F46E5; text-decoration: none;">Visit Husleflow</a> · 
-        <a href="${FRONTEND_URL}/register" style="color: #4F46E5; text-decoration: none;">Sign Up</a> · 
-        <a href="${FRONTEND_URL}/services" style="color: #4F46E5; text-decoration: none;">Browse Services</a>
+        <a href="${FRONTEND_URL}" style="color: #0891B2; text-decoration: none;">Visit Husleflow</a> · 
+        <a href="${FRONTEND_URL}/register" style="color: #0891B2; text-decoration: none;">Sign Up</a> · 
+        <a href="${FRONTEND_URL}/services" style="color: #0891B2; text-decoration: none;">Browse Services</a>
       </p>
     </div>
   </div>
@@ -586,7 +592,7 @@ const sendBookingCompletedEmail = async (clientEmail, clientName, booking) => {
 // SEND EMAIL TO EXTERNAL/GUEST (Non-registered user)
 // Uses special template with promotional footer!
 // ==========================================
-const sendExternalBookingEmail = async (email, name, booking, providerName) => {
+const sendExternalBookingEmail = async (email, name, booking, providerName, providerEmail = null) => {
   try {
     console.log(`📧 Attempting to send booking email to external guest: ${email}`);
     
@@ -606,12 +612,12 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
     
     const content = `
       <h2 style="color: #1f2937; margin-bottom: 10px;">
-        ${isCancelled ? 'Booking Cancelled ❌' : 'You Have a Booking! 🎉'}
+        ${isCancelled ? 'Booking Cancelled ❌' : 'Your Booking is Confirmed! 🎉'}
       </h2>
       <p style="color: #4b5563; line-height: 1.6;">
-        Hi there! ${isCancelled 
-          ? `Your booking for <strong>${booking.serviceName}</strong> with ${providerName} has been cancelled.`
-          : `${providerName} has booked <strong>${booking.serviceName}</strong> for you!`
+        Hi ${name}! ${isCancelled 
+          ? `Your booking for <strong>${booking.serviceName}</strong> has been cancelled.`
+          : `Your booking for <strong>${booking.serviceName}</strong> has been confirmed!`
         }
       </p>
       
@@ -620,10 +626,6 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
           <tr>
             <td>Service:</td>
             <td><strong>${booking.serviceName}</strong></td>
-          </tr>
-          <tr>
-            <td>Provider:</td>
-            <td>${providerName}</td>
           </tr>
           <tr>
             <td>Date:</td>
@@ -652,13 +654,21 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
       ` : ''}
     `;
 
-    // Use GUEST template with promotional footer
-    const { data, error } = await resend.emails.send({
+    // Build email options with optional CC to provider
+    const emailOptions = {
       from: FROM_EMAIL,
       to: email,
       subject: `${isCancelled ? '❌ Booking Cancelled' : '🎉 Booking Confirmed'}: ${booking.serviceName} - Husleflow`,
       html: getGuestEmailTemplate(content, isCancelled ? 'Booking Cancelled' : 'Booking Confirmation')
-    });
+    };
+
+    // Add CC to provider if email provided
+    if (providerEmail && !isCancelled) {
+      emailOptions.cc = providerEmail;
+    }
+
+    // Use GUEST template with promotional footer
+    const { data, error } = await resend.emails.send(emailOptions);
 
     if (error) {
       console.error(`❌ Failed to send email to ${email}:`, error);
@@ -673,11 +683,105 @@ const sendExternalBookingEmail = async (email, name, booking, providerName) => {
       return { success: false, error: error.message };
     }
 
-    console.log(`✅ Email sent successfully to ${email}, ID: ${data?.id}`);
+    console.log(`✅ Email sent successfully to ${email}${providerEmail ? ` (CC: ${providerEmail})` : ''}, ID: ${data?.id}`);
     return { success: true, data };
   } catch (error) {
     console.error('Send external booking email error:', error);
     console.error('Full error:', JSON.stringify(error, null, 2));
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// SEND RECEIPT EMAIL (After booking completed)
+// ==========================================
+const sendReceiptEmail = async (clientEmail, clientName, booking, providerName) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const receiptNumber = `HF-${Date.now().toString(36).toUpperCase()}`;
+    const completedDate = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Payment Receipt 🧾</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${clientName}, here's your receipt for your completed booking.</p>
+      
+      <div class="receipt">
+        <div class="receipt-header">
+          <table style="width: 100%;">
+            <tr>
+              <td style="color: #6b7280;">Receipt Number:</td>
+              <td style="text-align: right; font-weight: 600;">${receiptNumber}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280;">Date Completed:</td>
+              <td style="text-align: right; font-weight: 600;">${completedDate}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <table style="width: 100%;">
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Service:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${booking.service?.serviceName || 'Service'}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Provider:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${providerName}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Booking Date:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${bookingDate}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Time:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${booking.timeSlot}</td>
+          </tr>
+        </table>
+        
+        <div class="receipt-total">
+          <table style="width: 100%;">
+            <tr>
+              <td style="font-weight: 600; font-size: 18px;">Total Paid:</td>
+              <td style="text-align: right; font-weight: 700; font-size: 20px; color: #0891B2;">£${parseFloat(booking.totalPrice).toFixed(2)}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <p style="margin: 0; color: #065f46;"><strong>✅ Thank you for using Husleflow!</strong></p>
+        <p style="margin: 10px 0 0 0; color: #065f46;">We hope you had a great experience. Please consider leaving a review!</p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/dashboard/my-bookings" class="btn">Leave a Review →</a>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: `🧾 Receipt: ${booking.service?.serviceName || 'Service'} - Husleflow`,
+      html: getEmailTemplate(content, 'Payment Receipt')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send receipt email error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -691,5 +795,6 @@ module.exports = {
   sendBookingCreatedForClientEmail,
   sendBookingCancelledEmail,
   sendBookingCompletedEmail,
-  sendExternalBookingEmail
+  sendExternalBookingEmail,
+  sendReceiptEmail
 };

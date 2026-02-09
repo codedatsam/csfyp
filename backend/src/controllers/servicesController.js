@@ -214,7 +214,7 @@ const getMyServices = async (req, res) => {
 const createService = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { serviceName, category, description, price, duration, imageUrl } = req.body;
+    const { serviceName, category, description, price, duration, imageUrl, image, location } = req.body;
 
     // Validate required fields
     if (!serviceName || !category || !price) {
@@ -229,7 +229,7 @@ const createService = async (req, res) => {
     // Get user info for default business name
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { firstName: true, lastName: true }
+      select: { firstName: true, lastName: true, location: true }
     });
 
     // Get or create provider profile
@@ -244,6 +244,7 @@ const createService = async (req, res) => {
           userId,
           businessName: `${user.firstName} ${user.lastName}`, // Use user's name as default
           description: '',
+          location: user.location || null,
           rating: 0,
           totalBookings: 0
         }
@@ -265,7 +266,8 @@ const createService = async (req, res) => {
         description: description || '',
         price: parseFloat(price),
         duration: parseInt(duration) || 60,
-        image: imageUrl || null,
+        image: image || imageUrl || null,
+        location: location || user.location || null,
         isActive: true
       },
       include: {
@@ -329,6 +331,7 @@ const updateService = async (req, res) => {
     if (updates.duration !== undefined) updateData.duration = parseInt(updates.duration);
     if (updates.imageUrl !== undefined) updateData.image = updates.imageUrl;
     if (updates.image !== undefined) updateData.image = updates.image;
+    if (updates.location !== undefined) updateData.location = updates.location;
     if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
 
     // Update service
