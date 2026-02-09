@@ -8,8 +8,16 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
-const { uploadImage, uploadProfileImage, uploadServiceImage, uploadBusinessImage } = require('../services/cloudinaryService');
 const { okResponse, badRequestResponse, serverErrorResponse } = require('../utils/response');
+
+// Try to load cloudinary, but don't fail if not installed
+let cloudinaryService = null;
+try {
+  cloudinaryService = require('../services/cloudinaryService');
+  console.log('✅ Cloudinary service loaded');
+} catch (e) {
+  console.warn('⚠️ Cloudinary not available - image uploads will store URLs directly');
+}
 
 // ==========================================
 // UPLOAD GENERIC IMAGE
@@ -22,29 +30,40 @@ router.post('/', authenticateToken, async (req, res) => {
       return badRequestResponse(res, 'Image data is required');
     }
 
-    let result;
-    switch (type) {
-      case 'profile':
-        result = await uploadProfileImage(image, req.user.id);
-        break;
-      case 'service':
-        result = await uploadServiceImage(image);
-        break;
-      case 'business':
-        result = await uploadBusinessImage(image, req.user.id);
-        break;
-      default:
-        result = await uploadImage(image);
+    // If cloudinary is available, use it
+    if (cloudinaryService) {
+      let result;
+      switch (type) {
+        case 'profile':
+          result = await cloudinaryService.uploadProfileImage(image, req.user.id);
+          break;
+        case 'service':
+          result = await cloudinaryService.uploadServiceImage(image);
+          break;
+        case 'business':
+          result = await cloudinaryService.uploadBusinessImage(image, req.user.id);
+          break;
+        default:
+          result = await cloudinaryService.uploadImage(image);
+      }
+
+      if (!result.success) {
+        return badRequestResponse(res, result.error || 'Upload failed');
+      }
+
+      return okResponse(res, 'Image uploaded successfully', { 
+        url: result.url,
+        publicId: result.publicId 
+      });
     }
 
-    if (!result.success) {
-      return badRequestResponse(res, result.error || 'Upload failed');
+    // Fallback: If it's already a URL, return it
+    if (image.startsWith('http://') || image.startsWith('https://')) {
+      return okResponse(res, 'Image URL stored', { url: image });
     }
 
-    return okResponse(res, 'Image uploaded successfully', { 
-      url: result.url,
-      publicId: result.publicId 
-    });
+    // Fallback: Store base64 directly (not ideal for production)
+    return okResponse(res, 'Image stored', { url: image });
   } catch (error) {
     console.error('Upload error:', error);
     return serverErrorResponse(res, 'Failed to upload image');
@@ -62,15 +81,16 @@ router.post('/profile', authenticateToken, async (req, res) => {
       return badRequestResponse(res, 'Image data is required');
     }
 
-    const result = await uploadProfileImage(image, req.user.id);
-
-    if (!result.success) {
-      return badRequestResponse(res, result.error || 'Upload failed');
+    if (cloudinaryService) {
+      const result = await cloudinaryService.uploadProfileImage(image, req.user.id);
+      if (!result.success) {
+        return badRequestResponse(res, result.error || 'Upload failed');
+      }
+      return okResponse(res, 'Profile image uploaded successfully', { url: result.url });
     }
 
-    return okResponse(res, 'Profile image uploaded successfully', { 
-      url: result.url 
-    });
+    // Fallback - just return the image as-is
+    return okResponse(res, 'Profile image stored', { url: image });
   } catch (error) {
     console.error('Profile upload error:', error);
     return serverErrorResponse(res, 'Failed to upload profile image');
@@ -88,15 +108,16 @@ router.post('/service', authenticateToken, async (req, res) => {
       return badRequestResponse(res, 'Image data is required');
     }
 
-    const result = await uploadServiceImage(image);
-
-    if (!result.success) {
-      return badRequestResponse(res, result.error || 'Upload failed');
+    if (cloudinaryService) {
+      const result = await cloudinaryService.uploadServiceImage(image);
+      if (!result.success) {
+        return badRequestResponse(res, result.error || 'Upload failed');
+      }
+      return okResponse(res, 'Service image uploaded successfully', { url: result.url });
     }
 
-    return okResponse(res, 'Service image uploaded successfully', { 
-      url: result.url 
-    });
+    // Fallback
+    return okResponse(res, 'Service image stored', { url: image });
   } catch (error) {
     console.error('Service image upload error:', error);
     return serverErrorResponse(res, 'Failed to upload service image');
@@ -114,15 +135,16 @@ router.post('/business', authenticateToken, async (req, res) => {
       return badRequestResponse(res, 'Image data is required');
     }
 
-    const result = await uploadBusinessImage(image, req.user.id);
-
-    if (!result.success) {
-      return badRequestResponse(res, result.error || 'Upload failed');
+    if (cloudinaryService) {
+      const result = await cloudinaryService.uploadBusinessImage(image, req.user.id);
+      if (!result.success) {
+        return badRequestResponse(res, result.error || 'Upload failed');
+      }
+      return okResponse(res, 'Business image uploaded successfully', { url: result.url });
     }
 
-    return okResponse(res, 'Business image uploaded successfully', { 
-      url: result.url 
-    });
+    // Fallback
+    return okResponse(res, 'Business image stored', { url: image });
   } catch (error) {
     console.error('Business image upload error:', error);
     return serverErrorResponse(res, 'Failed to upload business image');
