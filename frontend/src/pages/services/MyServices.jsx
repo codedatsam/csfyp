@@ -281,7 +281,7 @@ function MyServices() {
             </h3>
             <p className="text-gray-600 mb-6">
               {services.length === 0 
-                ? 'Start offering your skills to other students!' 
+                ? 'Start offering your skills and services!' 
                 : 'Try a different search term'}
             </p>
             {services.length === 0 && (

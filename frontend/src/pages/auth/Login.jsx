@@ -136,149 +136,184 @@ function Login() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            Husleflow
-          </h1>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Sign in to continue your hustle
+    <div className="min-h-screen flex">
+      {/* Left Side - Background Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200')"
+          }}
+        />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/90 to-purple-700/90" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+          <h1 className="text-5xl font-bold mb-6">Husleflow</h1>
+          <p className="text-xl text-white/80 text-center max-w-md">
+            Connect with trusted professionals and book services instantly.
           </p>
-        </div>
-
-        {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? 'email-error' : undefined}
-                  className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
-                  placeholder="you@email.com"
-                />
-              </div>
-              {errors.email && (
-                <p id="email-error" role="alert" className="error-text">{errors.email}</p>
-              )}
+          
+          {/* Floating Stats */}
+          <div className="mt-12 grid grid-cols-2 gap-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold">500+</p>
+              <p className="text-sm text-white/70">Happy Customers</p>
             </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? 'password-error' : undefined}
-                  className={`input pl-10 ${errors.password ? 'input-error' : ''}`}
-                  placeholder="••••••••"
-                />
-              </div>
-              {errors.password && (
-                <p id="password-error" role="alert" className="error-text">{errors.password}</p>
-              )}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold">100+</p>
+              <p className="text-sm text-white/70">Service Providers</p>
             </div>
+          </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="rememberMe"
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link to="/forgot-password" className="link">
-                    Forgot password?
-                </Link>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary w-full flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <LogIn className="h-5 w-5 mr-2" />
-                  Sign In
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Register Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="link font-semibold">
-                Join the hustle
-              </Link>
-            </p>
+          {/* Testimonial */}
+          <div className="mt-12 bg-white/10 backdrop-blur-sm rounded-xl p-6 max-w-sm">
+            <p className="text-white/90 italic">"Found an amazing hair stylist through Husleflow. Booking was so easy!"</p>
+            <p className="text-white/60 text-sm mt-2">— Sarah M.</p>
           </div>
         </div>
+      </div>
 
-        {/* Creative Footer */}
-        <footer className="text-center">
-          <div className="flex flex-col items-center space-y-2">
-            <div className="flex items-center space-x-2 text-gray-500 text-sm">
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-primary-600 mb-2 lg:hidden">
+              Husleflow
+            </h1>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Welcome Back
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Sign in to continue
+            </p>
+          </div>
+
+          {/* Login Form */}
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              {/* Email Field */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
+                    className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
+                    placeholder="you@email.com"
+                  />
+                </div>
+                {errors.email && (
+                  <p id="email-error" role="alert" className="error-text">{errors.email}</p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? 'password-error' : undefined}
+                    className={`input pl-10 ${errors.password ? 'input-error' : ''}`}
+                    placeholder="••••••••"
+                  />
+                </div>
+                {errors.password && (
+                  <p id="password-error" role="alert" className="error-text">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="rememberMe"
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+
+                <div className="text-sm">
+                  <Link to="/forgot-password" className="link">
+                      Forgot password?
+                  </Link>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary w-full flex items-center justify-center py-3"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-5 w-5 mr-2" />
+                    Sign In
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Register Link */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="link font-semibold">
+                  Create account
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="text-center">
+            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
               <span>Made with</span>
               <Heart className="h-3 w-3 text-red-500 fill-red-500" />
               <span>&</span>
               <Coffee className="h-3 w-3 text-amber-600" />
-              <span>by students, for students</span>
+              <span>by Husleflow</span>
             </div>
-            <div className="flex items-center space-x-1 text-primary-600 text-sm">
-              <Sparkles className="h-3 w-3" />
-              <span className="font-semibold">Husleflow</span>
-              <Sparkles className="h-3 w-3" />
-            </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     </div>
   );

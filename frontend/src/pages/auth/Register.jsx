@@ -183,23 +183,71 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary-600 mb-2">
-            Husleflow
-          </h1>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Join Husleflow
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Buy and sell services with fellow students — all in one place
+    <div className="min-h-screen flex">
+      {/* Left Side - Background Image */}
+      <div className="hidden lg:flex lg:w-2/5 relative">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200')"
+          }}
+        />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/90 to-purple-700/90" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+          <h1 className="text-5xl font-bold mb-6">Husleflow</h1>
+          <p className="text-xl text-white/80 text-center max-w-md mb-8">
+            Join our community of service providers and customers.
           </p>
+          
+          {/* Features */}
+          <div className="space-y-4 w-full max-w-xs">
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="bg-white/20 p-2 rounded-lg">✨</div>
+              <div>
+                <p className="font-medium">Easy Booking</p>
+                <p className="text-sm text-white/70">Book services in seconds</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="bg-white/20 p-2 rounded-lg">🛡️</div>
+              <div>
+                <p className="font-medium">Verified Providers</p>
+                <p className="text-sm text-white/70">Trusted professionals</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="bg-white/20 p-2 rounded-lg">💰</div>
+              <div>
+                <p className="font-medium">Earn Money</p>
+                <p className="text-sm text-white/70">Offer your services</p>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Registration Form */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+      {/* Right Side - Register Form */}
+      <div className="w-full lg:w-3/5 flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto">
+        <div className="max-w-2xl w-full space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-primary-600 mb-2 lg:hidden">
+              Husleflow
+            </h1>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Create Your Account
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Join thousands of users buying and selling services
+            </p>
+          </div>
+
+          {/* Registration Form */}
+          <div className="bg-white rounded-2xl shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -455,22 +503,16 @@ function Register() {
 
         {/* Footer */}
         <footer className="text-center">
-          <div className="flex flex-col items-center space-y-2">
-            <div className="flex items-center space-x-2 text-gray-500 text-sm">
-              <span>Made with</span>
-              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
-              <span>&</span>
-              <Coffee className="h-3 w-3 text-amber-600" />
-              <span>by students, for students</span>
-            </div>
-            <div className="flex items-center space-x-1 text-primary-600 text-sm">
-              <Sparkles className="h-3 w-3" />
-              <span className="font-semibold">Husleflow</span>
-              <Sparkles className="h-3 w-3" />
-            </div>
+          <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
+            <span>Made with</span>
+            <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+            <span>&</span>
+            <Coffee className="h-3 w-3 text-amber-600" />
+            <span>by Husleflow</span>
           </div>
         </footer>
       </div>
+    </div>
 
       {/* Terms and Conditions Modal */}
       {showTermsModal && (
@@ -493,7 +535,7 @@ function Register() {
 
               <h3 className="font-semibold text-gray-900 mt-4">2. Description of Service</h3>
               <p className="text-gray-600">
-                Husleflow is a peer-to-peer marketplace that connects students offering services with students 
+                Husleflow is a peer-to-peer marketplace that connects service providers with customers 
                 seeking services. We provide the platform for these connections but are not a party to any 
                 agreements between users.
               </p>

@@ -489,7 +489,7 @@ function Messages() {
               <Heart className="h-4 w-4 text-red-500 fill-red-500" />
               <span>&</span>
               <Coffee className="h-4 w-4 text-amber-600" />
-              <span>by students, for students</span>
+              <span>by Husleflow</span>
             </div>
             <div className="flex items-center space-x-1 text-primary-600">
               <Sparkles className="h-4 w-4" />

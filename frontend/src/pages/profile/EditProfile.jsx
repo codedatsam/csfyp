@@ -320,7 +320,7 @@ function EditProfile() {
                     ? 'bg-purple-100 text-purple-800' 
                     : 'bg-blue-100 text-blue-800'
                 }`}>
-                  {user?.role === 'PROVIDER' ? '💼 Service Provider' : '🎓 Student'}
+                  {user?.role === 'PROVIDER' ? '💼 Service Provider' : '👤 Client'}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">All users can both book and offer services</p>
               </div>
@@ -362,7 +362,7 @@ function EditProfile() {
               <Heart className="h-4 w-4 text-red-500 fill-red-500" />
               <span>&</span>
               <Coffee className="h-4 w-4 text-amber-600" />
-              <span>by students, for students</span>
+              <span>by Husleflow</span>
             </div>
             <div className="flex items-center space-x-1 text-primary-600">
               <Sparkles className="h-4 w-4" />

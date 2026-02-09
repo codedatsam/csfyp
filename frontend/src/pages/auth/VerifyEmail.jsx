@@ -309,7 +309,7 @@ function VerifyEmail() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-500">
-          © 2026 Husleflow. Made by students, for students.
+          © 2026 Husleflow. All rights reserved.
         </p>
       </div>
     </div>

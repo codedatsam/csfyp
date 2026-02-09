@@ -32,7 +32,7 @@ function Dashboard() {
     } else if (user?.role === 'PROVIDER') {
       return <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">💼 Provider</span>;
     } else {
-      return <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">🎓 Student</span>;
+      return <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">👤 Client</span>;
     }
   };
 
@@ -209,7 +209,7 @@ function Dashboard() {
               <p className="text-sm text-white/90">
                 {user?.role === 'PROVIDER' || user?.role === 'ADMIN'
                   ? "Manage your services, track bookings, and grow your business with Husleflow."
-                  : "Browse services from fellow students, book appointments, and get things done!"}
+                  : "Browse services, book appointments, and get things done!"}
               </p>
             </div>
           </div>

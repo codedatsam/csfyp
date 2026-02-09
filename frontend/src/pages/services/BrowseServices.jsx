@@ -214,7 +214,7 @@ function BrowseServices() {
                 Find Services 🔍
               </h1>
               <p className="text-gray-600 text-sm md:text-base">
-                Discover what your fellow students are offering
+                Discover services from trusted local providers
               </p>
             </div>
             
