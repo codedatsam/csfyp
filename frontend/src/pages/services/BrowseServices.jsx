@@ -26,45 +26,61 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 
-// Common locations - expanded UK list
+// UK Cities - Organized by region for easy browsing
+const UK_REGIONS = {
+  'London & South East': [
+    'London', 'Brighton', 'Southampton', 'Portsmouth', 'Reading', 'Oxford',
+    'Milton Keynes', 'Slough', 'Guildford', 'Crawley', 'Maidstone', 'Canterbury',
+    'Hatfield', 'St Albans', 'Watford', 'Hemel Hempstead', 'Stevenage', 'Hertford',
+    'Welwyn Garden City', 'Luton', 'Bedford', 'Aylesbury', 'High Wycombe'
+  ],
+  'Midlands': [
+    'Birmingham', 'Nottingham', 'Leicester', 'Coventry', 'Derby', 'Wolverhampton',
+    'Stoke-on-Trent', 'Northampton', 'Worcester', 'Peterborough', 'Lincoln',
+    'Warwick', 'Loughborough', 'Telford', 'Shrewsbury'
+  ],
+  'North West': [
+    'Manchester', 'Liverpool', 'Preston', 'Blackpool', 'Bolton', 'Warrington',
+    'Wigan', 'Stockport', 'Chester', 'Lancaster', 'Carlisle', 'Blackburn'
+  ],
+  'North East & Yorkshire': [
+    'Leeds', 'Sheffield', 'Newcastle', 'Bradford', 'Hull', 'York', 'Middlesbrough',
+    'Sunderland', 'Doncaster', 'Huddersfield', 'Wakefield', 'Durham', 'Harrogate'
+  ],
+  'South West': [
+    'Bristol', 'Plymouth', 'Exeter', 'Bath', 'Gloucester', 'Swindon',
+    'Bournemouth', 'Cheltenham', 'Taunton', 'Torquay', 'Truro'
+  ],
+  'East of England': [
+    'Cambridge', 'Norwich', 'Ipswich', 'Colchester', 'Chelmsford', 'Southend-on-Sea',
+    'Basildon', 'Harlow', 'Braintree'
+  ],
+  'Wales': [
+    'Cardiff', 'Swansea', 'Newport', 'Wrexham', 'Barry', 'Neath', 'Cwmbran'
+  ],
+  'Scotland': [
+    'Edinburgh', 'Glasgow', 'Aberdeen', 'Dundee', 'Inverness', 'Stirling',
+    'Perth', 'Paisley', 'Falkirk'
+  ],
+  'Northern Ireland': [
+    'Belfast', 'Derry', 'Lisburn', 'Newry', 'Bangor', 'Craigavon'
+  ]
+};
+
+// Flatten for dropdown - most popular cities first
 const LOCATIONS = [
   'All Locations',
-  'London',
-  'Manchester',
-  'Birmingham',
-  'Leeds',
-  'Liverpool',
-  'Bristol',
-  'Sheffield',
-  'Newcastle',
-  'Nottingham',
-  'Leicester',
-  'Hatfield',
-  'St Albans',
-  'Cambridge',
-  'Oxford',
-  'Brighton',
-  'Southampton',
-  'Reading',
-  'Coventry',
-  'Cardiff',
-  'Edinburgh',
-  'Glasgow',
-  'Belfast',
-  'York',
-  'Bath',
-  'Durham',
-  'Exeter',
-  'Norwich',
-  'Warwick',
-  'Lancaster',
-  'Loughborough',
-  'Welwyn Garden City',
-  'Stevenage',
-  'Watford',
-  'Hemel Hempstead',
-  'Hertford'
-];
+  // Most popular UK cities
+  'London', 'Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Bristol',
+  'Sheffield', 'Newcastle', 'Nottingham', 'Leicester', 'Edinburgh', 'Glasgow',
+  'Cardiff', 'Belfast', 'Cambridge', 'Oxford', 'Brighton', 'Southampton',
+  // Then alphabetically others
+  ...Object.values(UK_REGIONS).flat()
+    .filter(city => !['London', 'Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Bristol',
+      'Sheffield', 'Newcastle', 'Nottingham', 'Leicester', 'Edinburgh', 'Glasgow',
+      'Cardiff', 'Belfast', 'Cambridge', 'Oxford', 'Brighton', 'Southampton'].includes(city))
+    .sort()
+].filter((city, index, self) => self.indexOf(city) === index); // Remove duplicates
 
 // Price ranges
 const PRICE_RANGES = [

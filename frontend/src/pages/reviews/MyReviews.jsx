@@ -32,9 +32,33 @@ function MyReviews() {
     averageRating: 0
   });
 
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchAllStats();
+  }, []);
+
+  // Fetch reviews when tab changes
   useEffect(() => {
     fetchReviews();
   }, [activeTab]);
+
+  const fetchAllStats = async () => {
+    try {
+      // Fetch both endpoints to get complete stats
+      const [receivedRes, givenRes] = await Promise.all([
+        api.get('/reviews/about-me').catch(() => ({ success: false })),
+        api.get('/reviews/my-reviews').catch(() => ({ success: false }))
+      ]);
+
+      setStats({
+        totalReceived: receivedRes.success ? receivedRes.data.stats?.totalReviews || receivedRes.data.pagination?.total || 0 : 0,
+        totalGiven: givenRes.success ? givenRes.data.stats?.totalGiven || givenRes.data.pagination?.total || 0 : 0,
+        averageRating: receivedRes.success ? receivedRes.data.stats?.averageRating || 0 : 0
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
 
   const fetchReviews = async () => {
     try {
@@ -47,13 +71,9 @@ function MyReviews() {
       
       if (response.success) {
         setReviews(response.data.reviews || []);
-        if (response.data.stats) {
-          setStats(response.data.stats);
-        }
       }
     } catch (error) {
       console.error('Failed to fetch reviews:', error);
-      // Show empty state if endpoint doesn't exist yet
       setReviews([]);
     } finally {
       setLoading(false);

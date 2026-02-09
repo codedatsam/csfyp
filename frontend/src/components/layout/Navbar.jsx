@@ -169,6 +169,35 @@ function Navbar() {
     }
   };
 
+  // Handle notification click - mark as read and navigate
+  const handleNotificationClick = async (notification) => {
+    // Mark as read
+    await markAsRead(notification.id);
+    
+    // Close dropdown
+    setNotificationOpen(false);
+    
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'NEW_BOOKING':
+      case 'BOOKING_UPDATE':
+      case 'BOOKING_CONFIRMED':
+      case 'BOOKING_CANCELLED':
+      case 'BOOKING_COMPLETED':
+        navigate('/dashboard/my-bookings');
+        break;
+      case 'NEW_REVIEW':
+        navigate('/dashboard/reviews');
+        break;
+      case 'NEW_MESSAGE':
+        navigate('/dashboard/messages');
+        break;
+      default:
+        navigate('/dashboard');
+        break;
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -264,7 +293,7 @@ function Navbar() {
                           notifications.slice(0, 10).map((notification) => (
                             <div
                               key={notification.id}
-                              onClick={() => markAsRead(notification.id)}
+                              onClick={() => handleNotificationClick(notification)}
                               className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
                                 !notification.isRead ? 'bg-primary-50' : ''
                               }`}
@@ -277,7 +306,7 @@ function Navbar() {
                                   <p className="text-sm font-medium text-gray-900">
                                     {notification.title}
                                   </p>
-                                  <p className="text-sm text-gray-500 truncate">
+                                  <p className="text-sm text-gray-500">
                                     {notification.message}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">

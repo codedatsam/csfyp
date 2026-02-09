@@ -194,7 +194,7 @@ const getMyReviews = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const [reviews, total] = await Promise.all([
+    const [reviews, total, receivedCount, avgRating] = await Promise.all([
       prisma.review.findMany({
         where: { clientId },
         include: {
@@ -212,6 +212,7 @@ const getMyReviews = async (req, res) => {
             include: {
               service: {
                 select: {
+                  id: true,
                   serviceName: true
                 }
               }
@@ -222,11 +223,33 @@ const getMyReviews = async (req, res) => {
         skip,
         take
       }),
-      prisma.review.count({ where: { clientId } })
+      prisma.review.count({ where: { clientId } }),
+      // Get reviews received (if user is also a provider)
+      prisma.review.count({
+        where: {
+          provider: {
+            userId: clientId
+          }
+        }
+      }),
+      // Get average rating received
+      prisma.review.aggregate({
+        where: {
+          provider: {
+            userId: clientId
+          }
+        },
+        _avg: { rating: true }
+      })
     ]);
 
     return okResponse(res, 'My reviews retrieved successfully', {
       reviews,
+      stats: {
+        totalGiven: total,
+        totalReceived: receivedCount,
+        averageRating: avgRating._avg.rating || 0
+      },
       pagination: {
         total,
         page: parseInt(page),

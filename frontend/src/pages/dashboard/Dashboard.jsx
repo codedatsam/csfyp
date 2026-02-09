@@ -17,7 +17,8 @@ import {
   Briefcase,
   Star,
   Settings,
-  Shield
+  Shield,
+  BarChart3
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 
@@ -147,6 +148,17 @@ function Dashboard() {
                   <Star className="h-4 w-4 mr-2" />
                   My Reviews
                 </Link>
+
+                {/* Analytics - For providers */}
+                {(user?.role === 'PROVIDER' || user?.role === 'ADMIN') && (
+                  <Link 
+                    to="/dashboard/analytics" 
+                    className="w-full btn btn-secondary justify-start flex items-center"
+                  >
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Link>
+                )}
 
                 {/* Account Settings */}
                 <Link 
