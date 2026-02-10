@@ -554,6 +554,159 @@ const getBusinessProfile = async (req, res) => {
   }
 };
 
+// ==========================================
+// GET MY BUSINESS PROFILE (Provider)
+// ==========================================
+const getMyBusinessProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const provider = await prisma.provider.findUnique({
+      where: { userId },
+      include: {
+        availability: {
+          orderBy: { dayOfWeek: 'asc' }
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            location: true
+          }
+        }
+      }
+    });
+
+    if (!provider) {
+      // Return empty profile for new providers
+      return okResponse(res, 'No business profile yet', {
+        businessProfile: null,
+        availability: []
+      });
+    }
+
+    // Format availability
+    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const availability = daysOrder.map(day => {
+      const dayAvailability = provider.availability.find(a => a.dayOfWeek === day);
+      return {
+        day,
+        isAvailable: dayAvailability?.isAvailable || false,
+        startTime: dayAvailability?.startTime || '09:00',
+        endTime: dayAvailability?.endTime || '17:00'
+      };
+    });
+
+    return okResponse(res, 'Business profile retrieved', {
+      businessProfile: {
+        id: provider.id,
+        businessName: provider.businessName,
+        description: provider.description,
+        businessImage: provider.businessImage,
+        location: provider.location || provider.user.location,
+        specialties: provider.specialties,
+        rating: parseFloat(provider.rating),
+        totalBookings: provider.totalBookings,
+        isVerified: provider.isVerified
+      },
+      availability
+    });
+  } catch (error) {
+    console.error('Get my business profile error:', error);
+    return serverErrorResponse(res, 'Failed to retrieve business profile');
+  }
+};
+
+// ==========================================
+// UPDATE BUSINESS PROFILE (Provider)
+// ==========================================
+const updateBusinessProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { 
+      businessName, 
+      description, 
+      businessImage, 
+      location, 
+      specialties,
+      availability 
+    } = req.body;
+
+    // Find or create provider
+    let provider = await prisma.provider.findUnique({
+      where: { userId }
+    });
+
+    if (!provider) {
+      // Create provider profile if doesn't exist
+      provider = await prisma.provider.create({
+        data: {
+          userId,
+          businessName: businessName || `${req.user.firstName}'s Services`,
+          description,
+          businessImage,
+          location,
+          specialties: specialties || []
+        }
+      });
+    } else {
+      // Update existing provider
+      const updateData = {};
+      if (businessName !== undefined) updateData.businessName = businessName;
+      if (description !== undefined) updateData.description = description;
+      if (businessImage !== undefined) updateData.businessImage = businessImage;
+      if (location !== undefined) updateData.location = location;
+      if (specialties !== undefined) updateData.specialties = specialties;
+
+      provider = await prisma.provider.update({
+        where: { id: provider.id },
+        data: updateData
+      });
+    }
+
+    // Update availability if provided
+    if (availability && Array.isArray(availability)) {
+      // Delete existing availability
+      await prisma.availability.deleteMany({
+        where: { providerId: provider.id }
+      });
+
+      // Create new availability records
+      const availabilityRecords = availability
+        .filter(a => a.isAvailable)
+        .map(a => ({
+          providerId: provider.id,
+          dayOfWeek: a.day,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          isAvailable: true
+        }));
+
+      if (availabilityRecords.length > 0) {
+        await prisma.availability.createMany({
+          data: availabilityRecords
+        });
+      }
+    }
+
+    // Fetch updated provider with availability
+    const updatedProvider = await prisma.provider.findUnique({
+      where: { id: provider.id },
+      include: {
+        availability: true
+      }
+    });
+
+    return okResponse(res, 'Business profile updated successfully', {
+      businessProfile: updatedProvider
+    });
+  } catch (error) {
+    console.error('Update business profile error:', error);
+    return serverErrorResponse(res, 'Failed to update business profile');
+  }
+};
+
 module.exports = {
   getAllServices,
   getServiceById,
@@ -562,5 +715,7 @@ module.exports = {
   updateService,
   deleteService,
   getCategories,
-  getBusinessProfile
+  getBusinessProfile,
+  getMyBusinessProfile,
+  updateBusinessProfile
 };

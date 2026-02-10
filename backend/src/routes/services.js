@@ -16,7 +16,9 @@ const {
   updateService,
   deleteService,
   getCategories,
-  getBusinessProfile
+  getBusinessProfile,
+  getMyBusinessProfile,
+  updateBusinessProfile
 } = require('../controllers/servicesController');
 
 // Public routes
@@ -26,6 +28,9 @@ router.get('/business/:providerId', getBusinessProfile);
 
 // Protected routes - must come BEFORE /:id to avoid conflicts
 router.get('/my-services', protect, getMyServices);
+router.get('/my-business-profile', protect, getMyBusinessProfile);
+router.put('/my-business-profile', protect, updateBusinessProfile);
+router.patch('/my-business-profile', protect, updateBusinessProfile);
 router.get('/provider/my-services', protect, getMyServices); // Alias for backwards compatibility
 router.post('/', protect, createService); // Anyone can create services (they become provider)
 

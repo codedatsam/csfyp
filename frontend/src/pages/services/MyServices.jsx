@@ -21,7 +21,11 @@ import {
   UserPlus,
   Loader2,
   X,
-  MapPin
+  MapPin,
+  Settings,
+  Store,
+  Calendar,
+  Save
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -46,6 +50,16 @@ const defaultCategories = [
   'Other'
 ];
 
+const daysOfWeek = [
+  { key: 'MONDAY', label: 'Monday' },
+  { key: 'TUESDAY', label: 'Tuesday' },
+  { key: 'WEDNESDAY', label: 'Wednesday' },
+  { key: 'THURSDAY', label: 'Thursday' },
+  { key: 'FRIDAY', label: 'Friday' },
+  { key: 'SATURDAY', label: 'Saturday' },
+  { key: 'SUNDAY', label: 'Sunday' }
+];
+
 function MyServices() {
   const { user } = useAuth();
   const [services, setServices] = useState([]);
@@ -53,6 +67,26 @@ function MyServices() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [deleting, setDeleting] = useState(null);
+  const [activeTab, setActiveTab] = useState('services'); // 'services' or 'business'
+  
+  // Business Profile State
+  const [businessProfile, setBusinessProfile] = useState({
+    businessName: '',
+    description: '',
+    businessImage: '',
+    location: '',
+    specialties: []
+  });
+  const [availability, setAvailability] = useState(
+    daysOfWeek.map(d => ({
+      day: d.key,
+      isAvailable: false,
+      startTime: '09:00',
+      endTime: '17:00'
+    }))
+  );
+  const [savingBusiness, setSavingBusiness] = useState(false);
+  const [specialtyInput, setSpecialtyInput] = useState('');
   
   // Book for Client modal
   const [bookForClientModal, setBookForClientModal] = useState(false);
@@ -74,6 +108,7 @@ function MyServices() {
 
   useEffect(() => {
     fetchMyServices();
+    fetchBusinessProfile();
   }, []);
 
   const fetchMyServices = async () => {
@@ -89,6 +124,76 @@ function MyServices() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBusinessProfile = async () => {
+    try {
+      const response = await api.get('/services/my-business-profile');
+      if (response.success && response.data.businessProfile) {
+        const profile = response.data.businessProfile;
+        setBusinessProfile({
+          businessName: profile.businessName || '',
+          description: profile.description || '',
+          businessImage: profile.businessImage || '',
+          location: profile.location || '',
+          specialties: profile.specialties || []
+        });
+        
+        // Set availability
+        if (response.data.availability) {
+          setAvailability(response.data.availability);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch business profile:', error);
+    }
+  };
+
+  const handleSaveBusinessProfile = async () => {
+    if (!businessProfile.businessName.trim()) {
+      toast.error('Business name is required');
+      return;
+    }
+
+    try {
+      setSavingBusiness(true);
+      const response = await api.put('/services/my-business-profile', {
+        ...businessProfile,
+        availability
+      });
+      
+      if (response.success) {
+        toast.success('Business profile updated! 🎉');
+      }
+    } catch (error) {
+      console.error('Failed to save business profile:', error);
+      toast.error('Failed to save business profile');
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
+
+  const handleAddSpecialty = () => {
+    if (specialtyInput.trim() && !businessProfile.specialties.includes(specialtyInput.trim())) {
+      setBusinessProfile(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, specialtyInput.trim()]
+      }));
+      setSpecialtyInput('');
+    }
+  };
+
+  const handleRemoveSpecialty = (specialty) => {
+    setBusinessProfile(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }));
+  };
+
+  const handleAvailabilityChange = (dayKey, field, value) => {
+    setAvailability(prev => prev.map(a => 
+      a.day === dayKey ? { ...a, [field]: value } : a
+    ));
   };
 
   const handleToggleActive = async (serviceId, currentStatus) => {
@@ -232,48 +337,271 @@ function MyServices() {
       <Navbar />
 
       <div className="container-custom py-8">
-        {/* Header */}
+        {/* Header with Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Services</h1>
-            <p className="text-gray-600">Manage your service offerings</p>
+            <p className="text-gray-600">Manage your services and business profile</p>
           </div>
-          <button 
-            onClick={handleOpenCreateModal}
-            className="btn btn-primary flex items-center gap-2"
+          {activeTab === 'services' && (
+            <button 
+              onClick={handleOpenCreateModal}
+              className="btn btn-primary flex items-center gap-2"
+            >
+              <Plus className="h-5 w-5" />
+              Add New Service
+            </button>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b">
+          <button
+            onClick={() => setActiveTab('services')}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === 'services' 
+                ? 'border-primary-600 text-primary-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
           >
-            <Plus className="h-5 w-5" />
-            Add New Service
+            <Store className="h-4 w-4 inline mr-2" />
+            Services
+          </button>
+          <button
+            onClick={() => setActiveTab('business')}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === 'business' 
+                ? 'border-primary-600 text-primary-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Settings className="h-4 w-4 inline mr-2" />
+            Business Settings
           </button>
         </div>
 
-        {/* Search & View Toggle */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search your services..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10"
-            />
+        {/* Business Settings Tab */}
+        {activeTab === 'business' && (
+          <div className="space-y-6">
+            {/* Business Info */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Business Information</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  {/* Business Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={businessProfile.businessName}
+                      onChange={(e) => setBusinessProfile(prev => ({ ...prev, businessName: e.target.value }))}
+                      placeholder="e.g., Dollie Beauty Studio"
+                      className="input w-full"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      About Your Business
+                    </label>
+                    <textarea
+                      value={businessProfile.description}
+                      onChange={(e) => setBusinessProfile(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Tell clients about your business, experience, and what makes you special..."
+                      rows={4}
+                      className="input w-full"
+                    />
+                  </div>
+
+                  {/* Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <MapPin className="h-4 w-4 inline mr-1" />
+                      Business Location
+                    </label>
+                    <LocationAutocomplete
+                      value={businessProfile.location}
+                      onChange={(e) => setBusinessProfile(prev => ({ ...prev, location: e.target.value }))}
+                      placeholder="Enter your business location..."
+                    />
+                  </div>
+
+                  {/* Specialties */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Specialties / Tags
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={specialtyInput}
+                        onChange={(e) => setSpecialtyInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSpecialty())}
+                        placeholder="e.g., Hair Styling"
+                        className="input flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddSpecialty}
+                        className="btn btn-secondary"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {businessProfile.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {businessProfile.specialties.map((specialty, index) => (
+                          <span 
+                            key={index}
+                            className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                          >
+                            {specialty}
+                            <button
+                              onClick={() => handleRemoveSpecialty(specialty)}
+                              className="hover:text-primary-900"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column - Business Image */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Photo
+                  </label>
+                  <ImageUpload
+                    value={businessProfile.businessImage}
+                    onChange={(url) => setBusinessProfile(prev => ({ ...prev, businessImage: url }))}
+                    type="business"
+                    placeholder="Upload business photo"
+                    previewSize="lg"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    This image will be shown on your business profile page
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Opening Hours */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Opening Hours
+              </h2>
+              
+              <div className="space-y-3">
+                {availability.map((dayAvail) => {
+                  const dayInfo = daysOfWeek.find(d => d.key === dayAvail.day);
+                  return (
+                    <div 
+                      key={dayAvail.day}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg ${
+                        dayAvail.isAvailable ? 'bg-green-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      {/* Day Name & Toggle */}
+                      <div className="flex items-center gap-3 w-full sm:w-40">
+                        <button
+                          type="button"
+                          onClick={() => handleAvailabilityChange(dayAvail.day, 'isAvailable', !dayAvail.isAvailable)}
+                          className={`p-1 rounded ${dayAvail.isAvailable ? 'text-green-600' : 'text-gray-400'}`}
+                        >
+                          {dayAvail.isAvailable ? (
+                            <ToggleRight className="h-6 w-6" />
+                          ) : (
+                            <ToggleLeft className="h-6 w-6" />
+                          )}
+                        </button>
+                        <span className={`font-medium ${dayAvail.isAvailable ? 'text-gray-900' : 'text-gray-500'}`}>
+                          {dayInfo?.label}
+                        </span>
+                      </div>
+
+                      {/* Time Inputs */}
+                      {dayAvail.isAvailable ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="time"
+                            value={dayAvail.startTime}
+                            onChange={(e) => handleAvailabilityChange(dayAvail.day, 'startTime', e.target.value)}
+                            className="input w-32"
+                          />
+                          <span className="text-gray-500">to</span>
+                          <input
+                            type="time"
+                            value={dayAvail.endTime}
+                            onChange={(e) => handleAvailabilityChange(dayAvail.day, 'endTime', e.target.value)}
+                            className="input w-32"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Closed</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveBusinessProfile}
+                disabled={savingBusiness}
+                className="btn btn-primary flex items-center gap-2"
+              >
+                {savingBusiness ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Save className="h-5 w-5" />
+                )}
+                Save Business Profile
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-600'}`}
-            >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-600'}`}
-            >
-              <List className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+        )}
+
+        {/* Services Tab */}
+        {activeTab === 'services' && (
+          <>
+            {/* Search & View Toggle */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search your services..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input pl-10"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  <Grid className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  <List className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
 
         {/* Loading */}
         {loading ? (
@@ -501,6 +829,8 @@ function MyServices() {
               </p>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 
