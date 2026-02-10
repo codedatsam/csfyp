@@ -683,18 +683,18 @@ function ServiceCard({ service }) {
           ) : (
             <div className="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center">
               <span className="text-primary-700 text-xs font-bold">
-                {service.provider?.user?.firstName?.charAt(0)}
+                {(service.provider?.businessName || service.provider?.user?.firstName)?.charAt(0)}
               </span>
             </div>
           )}
           <div>
             <p className="text-sm font-medium text-gray-900">
-              {service.provider?.user?.firstName} {service.provider?.user?.lastName}
+              {service.provider?.businessName || `${service.provider?.user?.firstName} ${service.provider?.user?.lastName}`}
             </p>
-            {service.provider?.user?.location && (
+            {(service.location || service.provider?.location || service.provider?.user?.location) && (
               <p className="text-xs text-gray-500 flex items-center">
                 <MapPin className="h-3 w-3 mr-1" />
-                {service.provider.user.location}
+                {service.location || service.provider?.location || service.provider?.user?.location}
               </p>
             )}
           </div>
@@ -767,11 +767,11 @@ function ServiceListItem({ service }) {
         </div>
         
         <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-          <span>{service.provider?.user?.firstName} {service.provider?.user?.lastName}</span>
-          {service.provider?.user?.location && (
+          <span>{service.provider?.businessName || `${service.provider?.user?.firstName} ${service.provider?.user?.lastName}`}</span>
+          {(service.location || service.provider?.location || service.provider?.user?.location) && (
             <span className="flex items-center">
               <MapPin className="h-3 w-3 mr-1" />
-              {service.provider.user.location}
+              {service.location || service.provider?.location || service.provider?.user?.location}
             </span>
           )}
           <span className="flex items-center">

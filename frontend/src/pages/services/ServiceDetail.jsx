@@ -266,18 +266,18 @@ function ServiceDetail() {
                 ) : (
                   <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
                     <span className="text-primary-700 text-2xl font-bold">
-                      {service.provider?.user?.firstName?.charAt(0)}
+                      {(service.provider?.businessName || service.provider?.user?.firstName)?.charAt(0)}
                     </span>
                   </div>
                 )}
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900">
-                    {service.provider?.user?.firstName} {service.provider?.user?.lastName}
+                    {service.provider?.businessName || `${service.provider?.user?.firstName} ${service.provider?.user?.lastName}`}
                   </h3>
-                  {service.provider?.user?.location && (
+                  {(service.location || service.provider?.location || service.provider?.user?.location) && (
                     <p className="text-gray-600 flex items-center mt-1">
                       <MapPin className="h-4 w-4 mr-1" />
-                      {service.provider.user.location}
+                      {service.location || service.provider?.location || service.provider?.user?.location}
                     </p>
                   )}
                   {service.provider?.rating > 0 && (

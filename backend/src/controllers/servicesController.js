@@ -80,7 +80,12 @@ const getAllServices = async (req, res) => {
         where,
         include: {
           provider: {
-            include: {
+            select: {
+              id: true,
+              businessName: true,
+              location: true,
+              rating: true,
+              totalBookings: true,
               user: {
                 select: {
                   firstName: true,
@@ -125,7 +130,12 @@ const getServiceById = async (req, res) => {
       where: { id },
       include: {
         provider: {
-          include: {
+          select: {
+            id: true,
+            businessName: true,
+            location: true,
+            rating: true,
+            totalBookings: true,
             user: {
               select: {
                 firstName: true,

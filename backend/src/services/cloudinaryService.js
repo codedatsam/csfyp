@@ -5,14 +5,31 @@
 // Description: Image upload service using Cloudinary
 // ==========================================
 
-const cloudinary = require('cloudinary').v2;
+let cloudinary = null;
+let isConfigured = false;
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+try {
+  cloudinary = require('cloudinary').v2;
+  
+  // Check if Cloudinary credentials are set
+  if (process.env.CLOUDINARY_CLOUD_NAME && 
+      process.env.CLOUDINARY_API_KEY && 
+      process.env.CLOUDINARY_API_SECRET) {
+    
+    // Configure Cloudinary
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    isConfigured = true;
+    console.log('✅ Cloudinary configured successfully');
+  } else {
+    console.warn('⚠️ Cloudinary credentials not set - uploads will store base64 directly');
+  }
+} catch (e) {
+  console.warn('⚠️ Cloudinary package not installed - uploads will store base64 directly');
+}
 
 // ==========================================
 // UPLOAD IMAGE FROM BASE64
@@ -20,7 +37,13 @@ cloudinary.config({
 const uploadImage = async (base64Image, folder = 'husleflow') => {
   try {
     // If it's already a URL, return it
-    if (base64Image.startsWith('http://') || base64Image.startsWith('https://')) {
+    if (base64Image && (base64Image.startsWith('http://') || base64Image.startsWith('https://'))) {
+      return { success: true, url: base64Image };
+    }
+
+    // If cloudinary is not configured, return the base64 as-is
+    if (!isConfigured || !cloudinary) {
+      console.log('Cloudinary not configured, storing image directly');
       return { success: true, url: base64Image };
     }
 
@@ -42,9 +65,10 @@ const uploadImage = async (base64Image, folder = 'husleflow') => {
     };
   } catch (error) {
     console.error('Cloudinary upload error:', error);
+    // Return base64 as fallback
     return {
-      success: false,
-      error: error.message
+      success: true,
+      url: base64Image
     };
   }
 };
@@ -75,7 +99,7 @@ const uploadBusinessImage = async (base64Image, providerId) => {
 // ==========================================
 const deleteImage = async (publicId) => {
   try {
-    if (!publicId) return { success: true };
+    if (!publicId || !isConfigured || !cloudinary) return { success: true };
     
     const result = await cloudinary.uploader.destroy(publicId);
     return {
@@ -97,5 +121,6 @@ module.exports = {
   uploadServiceImage,
   uploadBusinessImage,
   deleteImage,
-  cloudinary
+  cloudinary,
+  isConfigured
 };
