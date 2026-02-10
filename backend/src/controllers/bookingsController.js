@@ -21,7 +21,8 @@ const {
   sendBookingCancelledEmail,
   sendBookingCompletedEmail,
   sendExternalBookingEmail,
-  sendReceiptEmail
+  sendReceiptEmail,
+  sendGuestReceiptEmail
 } = require('../services/emailService');
 
 // ==========================================
@@ -379,6 +380,7 @@ const createBookingForGuest = async (req, res) => {
     // Send email to guest (CC to provider)
     let emailSent = false;
     try {
+      const businessName = provider.businessName || service.serviceName;
       const emailResult = await sendExternalBookingEmail(
         guestEmail.toLowerCase().trim(),
         guestName.trim(),
@@ -389,7 +391,7 @@ const createBookingForGuest = async (req, res) => {
           price: service.price,
           notes: notes
         },
-        `${provider.user.firstName} ${provider.user.lastName}`,
+        businessName,
         provider.user.email // CC to provider
       );
       
@@ -607,7 +609,17 @@ const updateBookingStatus = async (req, res) => {
 
     const provider = await prisma.provider.findUnique({
       where: { userId },
-      include: { user: true }
+      select: {
+        id: true,
+        businessName: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
     });
 
     if (!provider) {
@@ -633,7 +645,9 @@ const updateBookingStatus = async (req, res) => {
       include: {
         service: true,
         provider: {
-          include: {
+          select: {
+            id: true,
+            businessName: true,
             user: {
               select: {
                 firstName: true,
@@ -688,19 +702,20 @@ const updateBookingStatus = async (req, res) => {
             booking.client.firstName,
             updatedBooking
           );
-          // Also send receipt
+          // Also send receipt with business name
+          const businessName = provider.businessName || booking.service.serviceName;
           await sendReceiptEmail(
             booking.client.email,
             booking.client.firstName,
             updatedBooking,
-            `${provider.user.firstName} ${provider.user.lastName}`
+            businessName
           );
         } else if (status === 'CANCELLED') {
           await sendBookingCancelledEmail(
             booking.client.email,
             booking.client.firstName,
             updatedBooking,
-            provider.user.firstName
+            provider.businessName || booking.service.serviceName
           );
         }
         console.log(`📧 Booking ${status} email sent to ${booking.client.email}`);
@@ -711,22 +726,40 @@ const updateBookingStatus = async (req, res) => {
       // Guest booking - parse guest info from notes
       try {
         const guestMatch = booking.notes.match(/\[GUEST: ([^|]+) \| ([^\]|]+)/);
-        if (guestMatch && status === 'CANCELLED') {
+        if (guestMatch) {
           const guestName = guestMatch[1].trim();
           const guestEmail = guestMatch[2].trim();
-          await sendExternalBookingEmail(
-            guestEmail,
-            guestName,
-            {
-              serviceName: booking.service.serviceName,
-              bookingDate: booking.bookingDate,
-              timeSlot: booking.timeSlot,
-              price: booking.totalPrice,
-              status: 'CANCELLED'
-            },
-            `${provider.user.firstName} ${provider.user.lastName}`
-          );
-          console.log(`📧 Guest booking ${status} email sent to ${guestEmail}`);
+          const businessName = provider.businessName || booking.service.serviceName;
+          
+          if (status === 'CANCELLED') {
+            await sendExternalBookingEmail(
+              guestEmail,
+              guestName,
+              {
+                serviceName: booking.service.serviceName,
+                bookingDate: booking.bookingDate,
+                timeSlot: booking.timeSlot,
+                price: booking.totalPrice,
+                status: 'CANCELLED'
+              },
+              businessName
+            );
+            console.log(`📧 Guest booking CANCELLED email sent to ${guestEmail}`);
+          } else if (status === 'COMPLETED') {
+            // Send receipt to guest
+            await sendGuestReceiptEmail(
+              guestEmail,
+              guestName,
+              {
+                serviceName: booking.service.serviceName,
+                bookingDate: booking.bookingDate,
+                timeSlot: booking.timeSlot,
+                price: booking.totalPrice
+              },
+              businessName
+            );
+            console.log(`📧 Guest booking RECEIPT email sent to ${guestEmail}`);
+          }
         }
       } catch (emailError) {
         console.error('Failed to send guest booking email:', emailError);

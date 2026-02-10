@@ -358,6 +358,9 @@ const sendBookingConfirmedEmail = async (clientEmail, clientName, booking) => {
       year: 'numeric'
     });
     
+    // Use business name or service name (no provider personal name)
+    const businessName = booking.provider?.businessName || booking.service?.serviceName || 'Your Service Provider';
+    
     const content = `
       <h2 style="color: #1f2937; margin-bottom: 10px;">Booking Confirmed! ✅</h2>
       <p style="color: #4b5563; line-height: 1.6;">Hi ${clientName}, great news! Your booking has been confirmed.</p>
@@ -366,11 +369,11 @@ const sendBookingConfirmedEmail = async (clientEmail, clientName, booking) => {
         <table>
           <tr>
             <td>Service:</td>
-            <td>${booking.service?.serviceName || 'N/A'}</td>
+            <td><strong>${booking.service?.serviceName || 'N/A'}</strong></td>
           </tr>
           <tr>
-            <td>Provider:</td>
-            <td>${booking.provider?.user?.firstName} ${booking.provider?.user?.lastName}</td>
+            <td>Business:</td>
+            <td>${businessName}</td>
           </tr>
           <tr>
             <td>Date:</td>
@@ -695,7 +698,7 @@ const sendExternalBookingEmail = async (email, name, booking, providerName, prov
 // ==========================================
 // SEND RECEIPT EMAIL (After booking completed)
 // ==========================================
-const sendReceiptEmail = async (clientEmail, clientName, booking, providerName) => {
+const sendReceiptEmail = async (clientEmail, clientName, booking, businessName) => {
   try {
     const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
       weekday: 'long',
@@ -710,6 +713,9 @@ const sendReceiptEmail = async (clientEmail, clientName, booking, providerName) 
       month: 'long',
       year: 'numeric'
     });
+
+    // Use business name or service name
+    const displayBusinessName = businessName || booking.provider?.businessName || booking.service?.serviceName || 'Service Provider';
 
     const content = `
       <h2 style="color: #1f2937; margin-bottom: 10px;">Payment Receipt 🧾</h2>
@@ -735,8 +741,8 @@ const sendReceiptEmail = async (clientEmail, clientName, booking, providerName) 
             <td style="text-align: right; font-weight: 600; padding: 8px 0;">${booking.service?.serviceName || 'Service'}</td>
           </tr>
           <tr>
-            <td style="color: #6b7280; padding: 8px 0;">Provider:</td>
-            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${providerName}</td>
+            <td style="color: #6b7280; padding: 8px 0;">Business:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${displayBusinessName}</td>
           </tr>
           <tr>
             <td style="color: #6b7280; padding: 8px 0;">Booking Date:</td>
@@ -786,6 +792,98 @@ const sendReceiptEmail = async (clientEmail, clientName, booking, providerName) 
   }
 };
 
+// ==========================================
+// SEND GUEST RECEIPT EMAIL (After booking completed for guest)
+// ==========================================
+const sendGuestReceiptEmail = async (guestEmail, guestName, booking, businessName) => {
+  try {
+    const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    const receiptNumber = `HF-${Date.now().toString(36).toUpperCase()}`;
+    const completedDate = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const displayBusinessName = businessName || booking.serviceName || 'Service Provider';
+
+    const content = `
+      <h2 style="color: #1f2937; margin-bottom: 10px;">Payment Receipt 🧾</h2>
+      <p style="color: #4b5563; line-height: 1.6;">Hi ${guestName}, here's your receipt for your completed booking.</p>
+      
+      <div class="receipt">
+        <div class="receipt-header">
+          <table style="width: 100%;">
+            <tr>
+              <td style="color: #6b7280;">Receipt Number:</td>
+              <td style="text-align: right; font-weight: 600;">${receiptNumber}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280;">Date Completed:</td>
+              <td style="text-align: right; font-weight: 600;">${completedDate}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <table style="width: 100%;">
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Service:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${booking.serviceName || 'Service'}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Business:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${displayBusinessName}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Booking Date:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${bookingDate}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; padding: 8px 0;">Time:</td>
+            <td style="text-align: right; font-weight: 600; padding: 8px 0;">${booking.timeSlot}</td>
+          </tr>
+        </table>
+        
+        <div class="receipt-total">
+          <table style="width: 100%;">
+            <tr>
+              <td style="font-weight: 600; font-size: 18px;">Total Paid:</td>
+              <td style="text-align: right; font-weight: 700; font-size: 20px; color: #0891B2;">£${parseFloat(booking.price || booking.totalPrice).toFixed(2)}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <p style="margin: 0; color: #065f46;"><strong>✅ Thank you for your visit!</strong></p>
+        <p style="margin: 10px 0 0 0; color: #065f46;">We hope you had a great experience.</p>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: guestEmail,
+      subject: `🧾 Receipt: ${booking.serviceName || 'Service'} - Husleflow`,
+      html: getGuestEmailTemplate(content, 'Payment Receipt')
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Send guest receipt email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendVerificationEmail,
   sendWelcomeEmail,
@@ -796,5 +894,6 @@ module.exports = {
   sendBookingCancelledEmail,
   sendBookingCompletedEmail,
   sendExternalBookingEmail,
-  sendReceiptEmail
+  sendReceiptEmail,
+  sendGuestReceiptEmail
 };
