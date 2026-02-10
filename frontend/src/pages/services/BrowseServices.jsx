@@ -672,8 +672,12 @@ function ServiceCard({ service }) {
           {service.description || 'No description provided'}
         </p>
 
-        {/* Provider Info */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* Provider Info - Clickable to business profile */}
+        <Link 
+          to={`/business/${service.provider?.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-2 mb-3 hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors"
+        >
           {service.provider?.user?.avatar ? (
             <img 
               src={service.provider.user.avatar} 
@@ -688,7 +692,7 @@ function ServiceCard({ service }) {
             </div>
           )}
           <div>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-gray-900 hover:text-primary-600">
               {service.provider?.businessName || `${service.provider?.user?.firstName} ${service.provider?.user?.lastName}`}
             </p>
             {(service.location || service.provider?.location || service.provider?.user?.location) && (
@@ -698,7 +702,7 @@ function ServiceCard({ service }) {
               </p>
             )}
           </div>
-        </div>
+        </Link>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">

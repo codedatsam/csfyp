@@ -54,6 +54,7 @@ model Provider {
   totalBookings Int            @default(0) @map("total_bookings")
   priceRange    PriceRange?    @map("price_range")
   isVerified    Boolean        @default(false) @map("is_verified")
+  businessImage String?        @map("business_image")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   availability  Availability[]

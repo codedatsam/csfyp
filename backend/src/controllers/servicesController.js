@@ -437,6 +437,123 @@ const getCategories = async (req, res) => {
   }
 };
 
+// ==========================================
+// GET BUSINESS PROFILE (Public)
+// ==========================================
+const getBusinessProfile = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    const provider = await prisma.provider.findUnique({
+      where: { id: providerId },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            location: true
+          }
+        },
+        services: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' }
+        },
+        availability: {
+          orderBy: { dayOfWeek: 'asc' }
+        },
+        reviews: {
+          include: {
+            client: {
+              select: {
+                firstName: true,
+                lastName: true,
+                avatar: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    if (!provider) {
+      return notFoundResponse(res, 'Business not found');
+    }
+
+    // Format availability into business hours
+    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const businessHours = daysOrder.map(day => {
+      const dayAvailability = provider.availability.filter(a => a.dayOfWeek === day && a.isAvailable);
+      if (dayAvailability.length === 0) {
+        return { day, isOpen: false, hours: 'Closed' };
+      }
+      // Get earliest start and latest end
+      const startTimes = dayAvailability.map(a => a.startTime).sort();
+      const endTimes = dayAvailability.map(a => a.endTime).sort().reverse();
+      return {
+        day,
+        isOpen: true,
+        startTime: startTimes[0],
+        endTime: endTimes[0],
+        hours: `${startTimes[0]} - ${endTimes[0]}`
+      };
+    });
+
+    // Calculate stats
+    const totalReviews = provider.reviews.length;
+    const completedBookings = provider.totalBookings;
+
+    // Check if "Top Rated" (rating >= 4.5 and at least 5 reviews)
+    const isTopRated = parseFloat(provider.rating) >= 4.5 && totalReviews >= 5;
+
+    return okResponse(res, 'Business profile retrieved successfully', {
+      business: {
+        id: provider.id,
+        name: provider.businessName,
+        description: provider.description,
+        image: provider.businessImage || provider.user.avatar,
+        location: provider.location || provider.user.location,
+        rating: parseFloat(provider.rating),
+        totalReviews,
+        totalBookings: completedBookings,
+        isVerified: provider.isVerified,
+        isTopRated,
+        specialties: provider.specialties,
+        owner: {
+          firstName: provider.user.firstName,
+          lastName: provider.user.lastName,
+          avatar: provider.user.avatar
+        }
+      },
+      services: provider.services.map(s => ({
+        id: s.id,
+        name: s.serviceName,
+        description: s.description,
+        price: parseFloat(s.price),
+        duration: s.duration,
+        category: s.category,
+        image: s.image
+      })),
+      businessHours,
+      reviews: provider.reviews.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        client: {
+          name: `${r.client.firstName} ${r.client.lastName?.charAt(0) || ''}.`,
+          avatar: r.client.avatar
+        }
+      }))
+    });
+  } catch (error) {
+    console.error('Get business profile error:', error);
+    return serverErrorResponse(res, 'Failed to retrieve business profile');
+  }
+};
+
 module.exports = {
   getAllServices,
   getServiceById,
@@ -444,5 +561,6 @@ module.exports = {
   createService,
   updateService,
   deleteService,
-  getCategories
+  getCategories,
+  getBusinessProfile
 };

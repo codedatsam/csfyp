@@ -22,6 +22,9 @@ import MyServices from './pages/services/MyServices';
 import BrowseServices from './pages/services/BrowseServices';
 import ServiceDetail from './pages/services/ServiceDetail';
 
+// Business Profile
+import BusinessProfile from './pages/business/BusinessProfile';
+
 // Bookings Pages
 import MyBookings from './pages/bookings/MyBookings';
 
@@ -123,6 +126,7 @@ function App() {
       {/* Browse Services (public) */}
       <Route path="/services" element={<BrowseServices />} />
       <Route path="/services/:id" element={<ServiceDetail />} />
+      <Route path="/business/:providerId" element={<BusinessProfile />} />
 
       {/* Reviews */}
       <Route

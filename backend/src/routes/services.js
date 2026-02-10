@@ -15,12 +15,14 @@ const {
   getMyServices,
   updateService,
   deleteService,
-  getCategories
+  getCategories,
+  getBusinessProfile
 } = require('../controllers/servicesController');
 
 // Public routes
 router.get('/', getAllServices);
 router.get('/categories', getCategories);
+router.get('/business/:providerId', getBusinessProfile);
 
 // Protected routes - must come BEFORE /:id to avoid conflicts
 router.get('/my-services', protect, getMyServices);
