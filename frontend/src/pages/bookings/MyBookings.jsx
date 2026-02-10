@@ -36,11 +36,19 @@ function MyBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      // Try provider bookings first, then client bookings
-      const endpoint = user?.role === 'PROVIDER' ? '/bookings/provider-bookings' : '/bookings/my-bookings';
-      const response = await api.get(endpoint);
-      if (response.success) {
-        setBookings(response.data.bookings || []);
+      
+      // For providers, get bookings from clients
+      if (user?.role === 'PROVIDER') {
+        const response = await api.get('/bookings/provider-bookings?limit=100');
+        if (response.success) {
+          setBookings(response.data.bookings || []);
+        }
+      } else {
+        // For clients, get their own bookings
+        const response = await api.get('/bookings/my-bookings');
+        if (response.success) {
+          setBookings(response.data.bookings || []);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -82,11 +90,22 @@ function MyBookings() {
 
   const filterBookings = () => {
     const now = new Date();
+    now.setHours(0, 0, 0, 0); // Start of today
+    
     switch (activeTab) {
       case 'upcoming':
-        return bookings.filter(b => new Date(b.bookingDate) >= now && b.status !== 'CANCELLED');
+        // Show PENDING and CONFIRMED bookings (future or today)
+        return bookings.filter(b => 
+          (b.status === 'PENDING' || b.status === 'CONFIRMED') &&
+          new Date(b.bookingDate) >= now
+        );
       case 'past':
-        return bookings.filter(b => new Date(b.bookingDate) < now || b.status === 'COMPLETED');
+        // Show COMPLETED or past date bookings
+        return bookings.filter(b => 
+          b.status === 'COMPLETED' || 
+          b.status === 'CANCELLED' ||
+          new Date(b.bookingDate) < now
+        );
       default:
         return bookings;
     }
@@ -194,9 +213,30 @@ function MyBookings() {
                           <User className="h-4 w-4 text-gray-400" />
                           {user?.role === 'PROVIDER' ? (
                             <span>
-                              Client: {booking.client?.firstName} {booking.client?.lastName}
-                              {booking.notes?.includes('[GUEST:') && (
-                                <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">Guest</span>
+                              {booking.notes?.includes('[GUEST:') ? (
+                                (() => {
+                                  // Parse guest info from notes
+                                  const match = booking.notes.match(/\[GUEST: ([^|]+) \| ([^|\]]+)(?:\| ([^\]]+))?\]/);
+                                  if (match) {
+                                    return (
+                                      <>
+                                        <span className="font-medium">{match[1].trim()}</span>
+                                        <span className="text-gray-400 mx-1">•</span>
+                                        <span className="text-gray-500">{match[2].trim()}</span>
+                                        {match[3] && (
+                                          <>
+                                            <span className="text-gray-400 mx-1">•</span>
+                                            <span className="text-gray-500">{match[3].trim()}</span>
+                                          </>
+                                        )}
+                                        <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">Guest</span>
+                                      </>
+                                    );
+                                  }
+                                  return 'Guest Client';
+                                })()
+                              ) : (
+                                <>Client: {booking.client?.firstName} {booking.client?.lastName}</>
                               )}
                             </span>
                           ) : (

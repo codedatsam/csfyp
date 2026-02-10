@@ -366,13 +366,13 @@ function AnalyticsDashboard() {
                   <div className="space-y-3">
                     {serviceBreakdown.slice(0, 5).map((service, index) => {
                       const colors = ['bg-primary-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500'];
-                      const totalEarnings = serviceBreakdown.reduce((a, b) => a + (b.earnings || 0), 0);
-                      const percentage = totalEarnings > 0 ? ((service.earnings || 0) / totalEarnings) * 100 : 0;
+                      const totalEarnings = serviceBreakdown.reduce((a, b) => a + (b.total || 0), 0);
+                      const percentage = totalEarnings > 0 ? ((service.total || 0) / totalEarnings) * 100 : 0;
                       return (
                         <div key={service.name || index}>
                           <div className="flex items-center justify-between text-sm mb-1">
                             <span className="text-gray-700 truncate">{service.name || 'Service'}</span>
-                            <span className="text-gray-900 font-medium">£{(service.earnings || 0).toFixed(2)}</span>
+                            <span className="text-gray-900 font-medium">£{(service.total || 0).toFixed(2)}</span>
                           </div>
                           <div className="w-full bg-gray-100 rounded-full h-2">
                             <div 

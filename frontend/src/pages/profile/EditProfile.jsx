@@ -79,18 +79,33 @@ function EditProfile() {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
       return;
     }
 
     try {
       const base64 = await convertToBase64(file);
       setAvatarPreview(base64);
-      setFormData(prev => ({ ...prev, avatar: base64 }));
+      
+      // Upload to server
+      toast.loading('Uploading image...', { id: 'upload' });
+      const uploadResponse = await api.post('/upload/profile', { image: base64 });
+      
+      if (uploadResponse.success && uploadResponse.data?.url) {
+        setFormData(prev => ({ ...prev, avatar: uploadResponse.data.url }));
+        setAvatarPreview(uploadResponse.data.url);
+        toast.success('Image uploaded!', { id: 'upload' });
+      } else {
+        // Fallback to base64 if upload fails
+        setFormData(prev => ({ ...prev, avatar: base64 }));
+        toast.dismiss('upload');
+      }
     } catch (error) {
-      toast.error('Failed to process image');
+      console.error('Upload error:', error);
+      // Still allow base64 as fallback
+      toast.error('Upload failed, using local image', { id: 'upload' });
     }
   };
 
