@@ -182,15 +182,18 @@ function RecommendedServices({ limit = 4, showExplanations = true }) {
                 {/* Meta Info */}
                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                   {(() => {
-                    const rating = Number(rec?.service?.provider?.rating);
+  const rawRating = rec?.service?.provider?.rating;
+  const rating = Number(rawRating);
 
-                    return Number.isFinite(rating) && rating > 0 ? (
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                        {rating.toFixed(1)}
-                      </span>
-                    ) : null;
-                  })()}
+  if (!Number.isFinite(rating) || rating <= 0) return null;
+
+  return (
+    <span className="flex items-center gap-1">
+      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+      {rating.toFixed(1)}
+    </span>
+  );
+})()}
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {rec.service.duration} min
