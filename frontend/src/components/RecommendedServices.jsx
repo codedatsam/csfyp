@@ -175,16 +175,16 @@ function RecommendedServices({ limit = 4, showExplanations = true }) {
                     </p>
                   </div>
                   <span className="font-bold text-primary-600">
-                    £{rec.service.price.toFixed(2)}
+                    £{parseFloat(rec.service.price).toFixed(2)}
                   </span>
                 </div>
 
                 {/* Meta Info */}
                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                  {rec.service.provider.rating > 0 && (
+                  {rec.service.provider.rating && parseFloat(rec.service.provider.rating) > 0 && (
                     <span className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                      {rec.service.provider.rating.toFixed(1)}
+                      {parseFloat(rec.service.provider.rating).toFixed(1)}
                     </span>
                   )}
                   <span className="flex items-center gap-1">
