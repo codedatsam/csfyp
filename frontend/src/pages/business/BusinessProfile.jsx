@@ -167,11 +167,11 @@ function BusinessProfile() {
                     <div className="flex items-center bg-yellow-50 px-2 py-1 rounded">
                       <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                       <span className="ml-1 font-semibold text-gray-900">
-                        {business.rating?.toFixed(1) || '0.0'}
+                        {parseFloat(business.rating || 0).toFixed(1)}
                       </span>
                     </div>
                     <span className="text-gray-500 text-sm">
-                      {business.totalReviews} reviews
+                      {business.totalReviews || 0} reviews
                     </span>
                   </div>
 
@@ -275,7 +275,7 @@ function BusinessProfile() {
                   <p className="text-sm text-gray-500">{service.duration} mins</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900">£{service.price.toFixed(2)}</p>
+                  <p className="font-bold text-gray-900">£{parseFloat(service.price || 0).toFixed(2)}</p>
                 </div>
               </Link>
             ))}

@@ -742,7 +742,7 @@ function ServiceCard({ service }) {
             )}
           </div>
           <span className="text-lg font-bold text-primary-600">
-            £{parseFloat(service.price).toFixed(2)}
+            £{parseFloat(service.price || 0).toFixed(2)}
           </span>
         </div>
       </div>
@@ -789,7 +789,7 @@ function ServiceListItem({ service }) {
             </p>
           </div>
           <span className="text-xl font-bold text-primary-600 flex-shrink-0">
-            £{parseFloat(service.price).toFixed(2)}
+            £{parseFloat(service.price || 0).toFixed(2)}
           </span>
         </div>
         
@@ -805,7 +805,7 @@ function ServiceListItem({ service }) {
             <Clock className="h-3 w-3 mr-1" />
             {service.duration} min
           </span>
-          {service.provider?.rating > 0 && (
+          {parseFloat(service.provider?.rating || 0) > 0 && (
             <span className="flex items-center text-yellow-600">
               <Star className="h-3 w-3 mr-1 fill-yellow-400" />
               {parseFloat(service.provider.rating).toFixed(1)}

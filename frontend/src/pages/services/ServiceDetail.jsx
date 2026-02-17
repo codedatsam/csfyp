@@ -281,7 +281,7 @@ function ServiceDetail() {
                       {service.location || service.provider?.location || service.provider?.user?.location}
                     </p>
                   )}
-                  {service.provider?.rating > 0 && (
+                  {parseFloat(service.provider?.rating || 0) > 0 && (
                     <div className="flex items-center mt-2">
                       <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
                       <span className="font-medium">{parseFloat(service.provider.rating).toFixed(1)}</span>

@@ -356,7 +356,7 @@ function Home() {
                       </div>
                     )}
                     <div className="absolute top-3 right-3 bg-white px-3 py-1.5 rounded-full text-sm font-bold text-primary-600 shadow-lg">
-                      £{parseFloat(service.price).toFixed(0)}
+                      £{parseFloat(service.price || 0).toFixed(0)}
                     </div>
                   </div>
                   <div className="p-5">
