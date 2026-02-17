@@ -106,10 +106,10 @@ function SimilarServices({ serviceId, limit = 4 }) {
                 
                 <div className="flex items-center justify-between mt-1">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    {item.service.provider.rating > 0 && (
+                    {item.service.provider.rating && parseFloat(item.service.provider.rating) > 0 && (
                       <span className="flex items-center gap-0.5">
                         <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                        {item.service.provider.rating.toFixed(1)}
+                        {parseFloat(item.service.provider.rating).toFixed(1)}
                       </span>
                     )}
                     <span className="flex items-center gap-0.5">
@@ -118,7 +118,7 @@ function SimilarServices({ serviceId, limit = 4 }) {
                     </span>
                   </div>
                   <span className="font-semibold text-primary-600 text-sm">
-                    £{item.service.price.toFixed(2)}
+                    £{parseFloat(item.service.price).toFixed(2)}
                   </span>
                 </div>
 

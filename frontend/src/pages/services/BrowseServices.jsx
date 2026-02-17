@@ -26,6 +26,7 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 import { useSEO } from '../../hooks/useSEO';
+import LocationSearch from '../../components/common/LocationSearch';
 
 // UK Cities - Organized by region for easy browsing
 const UK_REGIONS = {
@@ -247,22 +248,25 @@ function BrowseServices() {
 
           {/* Quick Filters */}
           <div className="flex flex-wrap items-center gap-2 mt-4">
-            {/* Location Quick Filter */}
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-400" />
-              <select
+            {/* Location Search Filter */}
+            <div className="w-64">
+              <LocationSearch
                 value={selectedLocation}
-                onChange={(e) => {
-                  setSelectedLocation(e.target.value);
+                onChange={(val) => {
+                  setSelectedLocation(val);
                   setPagination(prev => ({ ...prev, page: 1 }));
                 }}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">All Locations</option>
-                {LOCATIONS.filter(l => l !== 'All Locations').map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </select>
+                onSelect={(loc) => {
+                  if (loc) {
+                    setSelectedLocation(loc.displayName);
+                  }
+                  setPagination(prev => ({ ...prev, page: 1 }));
+                }}
+                placeholder="Postcode or city..."
+                size="sm"
+                showIcon={true}
+                clearable={true}
+              />
             </div>
 
             {/* Category Pills */}
@@ -348,22 +352,41 @@ function BrowseServices() {
               {/* Location */}
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-700 mb-3">Location</h4>
-                <div className="space-y-1">
-                  {LOCATIONS.map((location) => (
+                <LocationSearch
+                  value={selectedLocation}
+                  onChange={(val) => {
+                    setSelectedLocation(val);
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                  onSelect={(loc) => {
+                    if (loc) {
+                      setSelectedLocation(loc.displayName);
+                    } else {
+                      setSelectedLocation('');
+                    }
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                  placeholder="Search postcode or city..."
+                  size="sm"
+                  showIcon={true}
+                  clearable={true}
+                />
+                {/* Quick location shortcuts */}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {['London', 'Manchester', 'Birmingham'].map(city => (
                     <button
-                      key={location}
+                      key={city}
                       onClick={() => {
-                        setSelectedLocation(location === 'All Locations' ? '' : location);
+                        setSelectedLocation(city);
                         setPagination(prev => ({ ...prev, page: 1 }));
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                        (selectedLocation === location) || (location === 'All Locations' && !selectedLocation)
-                          ? 'bg-primary-100 text-primary-700 font-medium'
-                          : 'hover:bg-gray-100 text-gray-600'
+                      className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                        selectedLocation === city
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
-                      <MapPin className="h-4 w-4" />
-                      {location}
+                      {city}
                     </button>
                   ))}
                 </div>

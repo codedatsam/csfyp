@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { useSEO } from '../hooks/useSEO';
+import HeroSearch from '../components/HeroSearch';
 
 // Service images for background
 const SERVICE_IMAGES = [
@@ -137,20 +138,9 @@ function Home() {
                 From hair styling to fitness training, connect with trusted local professionals and book appointments instantly.
               </p>
 
-              {/* Search Bar */}
-              <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2 max-w-xl mx-auto lg:mx-0 mb-8 border border-gray-100">
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
-                  <Search className="h-5 w-5 text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="What service do you need?"
-                    className="bg-transparent border-none outline-none w-full text-gray-700 placeholder-gray-400"
-                  />
-                </div>
-                <Link to="/services" className="btn btn-primary px-8 py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30">
-                  Search
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+              {/* Fresha-style Search Bar */}
+              <div className="max-w-3xl mx-auto lg:mx-0 mb-8">
+                <HeroSearch />
               </div>
 
               {/* Trust Indicators */}
