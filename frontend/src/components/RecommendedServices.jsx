@@ -108,8 +108,6 @@ function RecommendedServices({ limit = 4, showExplanations = true }) {
     );
   }
 
-  const rating = Number(rec?.service?.provider?.rating);
-
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6">
       {/* Header */}
@@ -183,11 +181,11 @@ function RecommendedServices({ limit = 4, showExplanations = true }) {
 
                 {/* Meta Info */}
                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                  {Number.isFinite(rating) && rating > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    {rating.toFixed(1)}
-                  </span>
+                  {rec.service.provider.rating > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                      {rec.service.provider.rating.toFixed(1)}
+                    </span>
                   )}
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
