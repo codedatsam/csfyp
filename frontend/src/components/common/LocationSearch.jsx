@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, X, Loader2, Search } from 'lucide-react';
-import api from '../services/api';
+import api from '../../services/api';
 
 function LocationSearch({ 
   value = '', 
