@@ -24,6 +24,7 @@ const reviewsRoutes = require('./routes/reviews');
 const adminRoutes = require('./routes/admin');
 const analyticsRoutes = require('./routes/analytics');
 const uploadRoutes = require('./routes/uploadRoutes');
+const recommendationsRoutes = require('./routes/recommendations');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -199,6 +200,9 @@ app.use('/api/v1/analytics', analyticsRoutes);
 
 // Mount upload routes
 app.use('/api/v1/upload', uploadRoutes);
+
+// Mount recommendations routes
+app.use('/api/v1/recommendations', recommendationsRoutes);
 
 // ==========================================
 // ERROR HANDLING

@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
+import SimilarServices from '../../components/SimilarServices';
 
 function ServiceDetail() {
   const { id } = useParams();
@@ -450,6 +451,13 @@ function ServiceDetail() {
           </div>
         </div>
       </div>
+
+      {/* Similar Services Section */}
+      {service && (
+        <div className="container-custom py-6">
+          <SimilarServices serviceId={id} limit={4} />
+        </div>
+      )}
 
       {/* QR Code Modal */}
       {showQRModal && (

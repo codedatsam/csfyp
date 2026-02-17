@@ -21,6 +21,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
+import RecommendedServices from '../../components/RecommendedServices';
 
 function Dashboard() {
   const { user } = useAuth();
@@ -234,6 +235,11 @@ function Dashboard() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Recommended Services Section */}
+        <div className="mt-8">
+          <RecommendedServices limit={4} showExplanations={true} />
         </div>
       </main>
 
