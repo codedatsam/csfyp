@@ -731,6 +731,149 @@ async function resendVerificationEmail(req, res) {
   }
 }
 
+// ==========================================
+// DELETE USER ACCOUNT
+// ==========================================
+async function deleteAccount(req, res) {
+  try {
+    const userId = req.user.id;
+    const { password, confirmDelete } = req.body;
+
+    // Verify confirmation text
+    if (confirmDelete !== 'DELETE') {
+      return badRequestResponse(res, 'Please type DELETE to confirm account deletion');
+    }
+
+    // Get user with password
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return badRequestResponse(res, 'User not found');
+    }
+
+    // Verify password
+    const isValidPassword = await comparePassword(password, user.password);
+    if (!isValidPassword) {
+      return badRequestResponse(res, 'Incorrect password');
+    }
+
+    // Check if user is a provider with active bookings
+    if (user.role === 'PROVIDER') {
+      const provider = await prisma.provider.findUnique({
+        where: { userId: userId },
+        include: {
+          services: {
+            include: {
+              bookings: {
+                where: {
+                  status: { in: ['PENDING', 'CONFIRMED'] }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (provider) {
+        const activeBookings = provider.services.reduce(
+          (count, service) => count + service.bookings.length, 0
+        );
+
+        if (activeBookings > 0) {
+          return badRequestResponse(
+            res, 
+            `Cannot delete account with ${activeBookings} active booking(s). Please complete or cancel them first.`
+          );
+        }
+      }
+    }
+
+    // Check if user has active bookings as a client
+    const clientBookings = await prisma.booking.count({
+      where: {
+        clientId: userId,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      }
+    });
+
+    if (clientBookings > 0) {
+      return badRequestResponse(
+        res,
+        `Cannot delete account with ${clientBookings} active booking(s). Please complete or cancel them first.`
+      );
+    }
+
+    // Start deletion transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete notifications
+      await tx.notification.deleteMany({
+        where: { userId: userId }
+      });
+
+      // Delete reviews written by user
+      await tx.review.deleteMany({
+        where: { clientId: userId }
+      });
+
+      // If provider, delete provider-related data
+      if (user.role === 'PROVIDER' || user.role === 'ADMIN') {
+        const provider = await tx.provider.findUnique({
+          where: { userId: userId }
+        });
+
+        if (provider) {
+          // Delete reviews received
+          await tx.review.deleteMany({
+            where: { providerId: provider.id }
+          });
+
+          // Delete bookings for provider's services
+          await tx.booking.deleteMany({
+            where: {
+              service: { providerId: provider.id }
+            }
+          });
+
+          // Delete availability
+          await tx.availability.deleteMany({
+            where: { providerId: provider.id }
+          });
+
+          // Delete services
+          await tx.service.deleteMany({
+            where: { providerId: provider.id }
+          });
+
+          // Delete provider record
+          await tx.provider.delete({
+            where: { id: provider.id }
+          });
+        }
+      }
+
+      // Delete user's bookings as client (completed ones)
+      await tx.booking.deleteMany({
+        where: { clientId: userId }
+      });
+
+      // Finally delete the user
+      await tx.user.delete({
+        where: { id: userId }
+      });
+    });
+
+    console.log(`🗑️ Account deleted: ${user.email}`);
+
+    return okResponse(res, 'Account deleted successfully. We\'re sorry to see you go!');
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return serverErrorResponse(res, 'Failed to delete account');
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -743,5 +886,6 @@ module.exports = {
   verifyResetToken,
   verifyEmail,
   verifyEmailByCode,
-  resendVerificationEmail
+  resendVerificationEmail,
+  deleteAccount
 };

@@ -90,6 +90,13 @@ function Register() {
       newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
+    // Phone validation (now required)
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^[\d\s\+\-\(\)]{10,15}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
     // Location validation (now required)
     if (!formData.location) {
       newErrors.location = 'Location is required';
@@ -340,7 +347,7 @@ function Register() {
               {/* Phone */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number (Optional)
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -352,10 +359,14 @@ function Register() {
                     type="tel"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="input pl-10"
+                    className={`input pl-10 ${errors.phone ? 'border-red-500' : ''}`}
                     placeholder="+44 7700 900123"
+                    required
                   />
                 </div>
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                )}
               </div>
 
               {/* Location - Autocomplete */}

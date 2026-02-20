@@ -23,7 +23,8 @@ const {
   verifyResetToken,
   verifyEmail,
   verifyEmailByCode,
-  resendVerificationEmail
+  resendVerificationEmail,
+  deleteAccount
 } = require('../controllers/authController');
 
 const {
@@ -94,6 +95,11 @@ router.post('/change-password', authenticate, changePasswordValidation, changePa
 // @desc    Logout user (client-side token deletion)
 // @access  Private
 router.post('/logout', authenticate, logout);
+
+// @route   DELETE /api/v1/auth/delete-account
+// @desc    Delete user account permanently
+// @access  Private
+router.delete('/delete-account', authenticate, deleteAccount);
 
 
 // @route   POST /api/v1/auth/test-email

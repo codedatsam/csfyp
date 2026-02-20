@@ -5,6 +5,7 @@
 // Description: Main dashboard after login
 // ==========================================
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -23,8 +24,54 @@ import {
 import Navbar from '../../components/layout/Navbar';
 import RecommendedServices from '../../components/RecommendedServices';
 
+// Service/vocation background images
+const SERVICE_BACKGROUNDS = [
+  {
+    url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600',
+    title: 'Hair Salon'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1600',
+    title: 'Barber Shop'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1600',
+    title: 'Spa & Wellness'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600',
+    title: 'Fitness & Gym'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600',
+    title: 'Makeup & Beauty'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=1600',
+    title: 'Nail Salon'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1600',
+    title: 'Professional Services'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1600',
+    title: 'Personal Training'
+  }
+];
+
 function Dashboard() {
   const { user } = useAuth();
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+
+  // Rotate background images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBgIndex((prev) => (prev + 1) % SERVICE_BACKGROUNDS.length);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Get user role display
   const getRoleBadge = () => {
@@ -41,15 +88,29 @@ function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      {/* Hero Banner with Background Image */}
+      {/* Hero Banner with Animated Background Images */}
       <div className="relative h-48 md:h-64 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600')"
-          }}
-        />
+        {/* Animated Background Images */}
+        {SERVICE_BACKGROUNDS.map((bg, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              index === currentBgIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-center transform scale-105 animate-slow-zoom"
+              style={{
+                backgroundImage: `url('${bg.url}')`
+              }}
+            />
+          </div>
+        ))}
+        
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/90 to-purple-600/80" />
+        
+        {/* Content */}
         <div className="relative z-10 h-full container-custom flex items-center">
           <div className="text-white">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">
@@ -61,6 +122,22 @@ function Dashboard() {
                 : "Discover and book amazing services"}
             </p>
           </div>
+        </div>
+
+        {/* Image indicator dots */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2">
+          {SERVICE_BACKGROUNDS.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentBgIndex(index)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentBgIndex 
+                  ? 'bg-white w-6' 
+                  : 'bg-white/50 hover:bg-white/75'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
 

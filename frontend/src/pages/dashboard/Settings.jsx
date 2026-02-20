@@ -2,11 +2,11 @@
 // SETTINGS PAGE
 // ==========================================
 // Author: Samson Fabiyi
-// Description: Account settings
+// Description: Account settings with delete account
 // ==========================================
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Lock,
   Bell,
@@ -14,7 +14,9 @@ import {
   Loader2,
   ArrowLeft,
   Eye,
-  EyeOff
+  EyeOff,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -22,17 +24,25 @@ import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 
 function Settings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
-    confirm: false
+    confirm: false,
+    delete: false
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
+  });
+  const [deleteData, setDeleteData] = useState({
+    password: '',
+    confirmText: ''
   });
 
   const handleChangePassword = async (e) => {
@@ -66,6 +76,40 @@ function Settings() {
       toast.error(error.error || 'Failed to change password');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+
+    if (deleteData.confirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+
+    if (!deleteData.password) {
+      toast.error('Please enter your password');
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      const response = await api.delete('/auth/delete-account', {
+        data: {
+          password: deleteData.password,
+          confirmDelete: deleteData.confirmText
+        }
+      });
+
+      if (response.success) {
+        toast.success('Account deleted successfully. Goodbye! 👋');
+        logout();
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error(error.error || 'Failed to delete account');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -224,8 +268,131 @@ function Settings() {
               </div>
             </div>
           </div>
+
+          {/* Danger Zone - Delete Account */}
+          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-red-600">Danger Zone</h3>
+                <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-red-700">
+                  <p className="font-medium mb-1">Warning: This action cannot be undone!</p>
+                  <ul className="list-disc list-inside space-y-1 text-red-600">
+                    <li>All your personal data will be permanently deleted</li>
+                    <li>Your bookings history will be removed</li>
+                    <li>Your reviews will be deleted</li>
+                    {(user.role === 'PROVIDER' || user.role === 'ADMIN') && (
+                      <>
+                        <li>All your services will be deleted</li>
+                        <li>Your business profile will be removed</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="btn bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete My Account
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Delete Account</h3>
+                  <p className="text-sm text-gray-500">This action is permanent</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleDeleteAccount} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Enter your password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.delete ? 'text' : 'password'}
+                      value={deleteData.password}
+                      onChange={(e) => setDeleteData({ ...deleteData, password: e.target.value })}
+                      className="input w-full pr-10"
+                      placeholder="Your current password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords({ ...showPasswords, delete: !showPasswords.delete })}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPasswords.delete ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type <span className="font-bold text-red-600">DELETE</span> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteData.confirmText}
+                    onChange={(e) => setDeleteData({ ...deleteData, confirmText: e.target.value.toUpperCase() })}
+                    className="input w-full"
+                    placeholder="DELETE"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setDeleteData({ password: '', confirmText: '' });
+                    }}
+                    className="btn btn-secondary flex-1"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={deleteLoading || deleteData.confirmText !== 'DELETE'}
+                    className="btn bg-red-600 hover:bg-red-700 text-white flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deleteLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                    ) : (
+                      'Delete Forever'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
