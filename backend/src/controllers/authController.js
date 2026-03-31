@@ -314,6 +314,70 @@ async function changePassword(req, res) {
 }
 
 // ==========================================
+// CHANGE USER ROLE (CLIENT <-> PROVIDER)
+// ==========================================
+async function changeRole(req, res) {
+  try {
+    const userId = req.user.id;
+    const { role } = req.body;
+
+    // Validate role
+    const validRoles = ['CLIENT', 'PROVIDER'];
+    if (!role || !validRoles.includes(role)) {
+      return badRequestResponse(res, 'Invalid role. Must be CLIENT or PROVIDER');
+    }
+
+    // Get current user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { provider: true }
+    });
+
+    if (!user) {
+      return notFoundResponse(res, 'User not found');
+    }
+
+    // If changing to PROVIDER, create provider profile if doesn't exist
+    if (role === 'PROVIDER' && !user.provider) {
+      await prisma.provider.create({
+        data: {
+          userId: userId,
+          businessName: `${user.firstName}'s Services`,
+          description: 'Welcome to my services!'
+        }
+      });
+    }
+
+    // Update user role
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        provider: {
+          select: {
+            id: true,
+            businessName: true
+          }
+        }
+      }
+    });
+
+    console.log(`✅ User role changed: ${user.email} → ${role}`);
+
+    return okResponse(res, `Role changed to ${role} successfully`, { user: updatedUser });
+
+  } catch (error) {
+    console.error('Change role error:', error);
+    return serverErrorResponse(res, 'Failed to change role');
+  }
+}
+
+// ==========================================
 // LOGOUT (Client-side token deletion)
 // ==========================================
 function logout(req, res) {
@@ -880,6 +944,7 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  changeRole,
   logout,
   requestPasswordReset,
   resetPassword,

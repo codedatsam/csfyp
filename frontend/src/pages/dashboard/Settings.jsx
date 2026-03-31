@@ -16,7 +16,10 @@ import {
   Eye,
   EyeOff,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  UserCog,
+  Briefcase,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -24,11 +27,13 @@ import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 
 function Settings() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -110,6 +115,30 @@ function Settings() {
       toast.error(error.error || 'Failed to delete account');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleChangeRole = async (newRole) => {
+    try {
+      setRoleLoading(true);
+      const response = await api.post('/auth/change-role', { role: newRole });
+
+      if (response.success) {
+        toast.success(`You are now a ${newRole}! 🎉`);
+        setShowRoleModal(false);
+        // Refresh user data to update the UI
+        await refreshUser();
+        // Redirect to appropriate dashboard
+        if (newRole === 'PROVIDER') {
+          navigate('/dashboard/my-services');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    } catch (error) {
+      toast.error(error.error || 'Failed to change role');
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -266,6 +295,67 @@ function Settings() {
                   {new Date(user.createdAt).toLocaleDateString('en-GB')}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Change Role Section */}
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <UserCog className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Account Type</h3>
+                <p className="text-sm text-gray-500">Switch between Client and Provider roles</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-600 mb-2">Current Role:</p>
+              <div className="flex items-center gap-2">
+                {user.role === 'PROVIDER' ? (
+                  <Briefcase className="h-5 w-5 text-purple-600" />
+                ) : (
+                  <User className="h-5 w-5 text-blue-600" />
+                )}
+                <span className="font-bold text-lg">
+                  {user.role === 'PROVIDER' ? 'Service Provider' : 'Client'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {user.role === 'CLIENT' ? (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h4 className="font-medium text-purple-900 mb-2">Become a Provider</h4>
+                  <p className="text-sm text-purple-700 mb-3">
+                    Start offering your services and earn money! As a provider, you can create service listings, 
+                    receive bookings, and build your business.
+                  </p>
+                  <button
+                    onClick={() => setShowRoleModal(true)}
+                    className="btn bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Become a Provider
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Switch to Client</h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Switch back to a client account. You can still browse and book services.
+                    Your provider profile will be saved if you switch back later.
+                  </p>
+                  <button
+                    onClick={() => setShowRoleModal(true)}
+                    className="btn bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Switch to Client
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

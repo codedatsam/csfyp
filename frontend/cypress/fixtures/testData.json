@@ -1,0 +1,16 @@
+{
+  "testUser": {
+    "email": "cypress_test@example.com",
+    "password": "Test@123456",
+    "firstName": "Cypress",
+    "lastName": "Test",
+    "phone": "07123456789"
+  },
+  "testService": {
+    "serviceName": "Cypress Test Haircut",
+    "category": "Haircuts",
+    "description": "A test service created by Cypress",
+    "price": "25",
+    "duration": "30"
+  }
+}

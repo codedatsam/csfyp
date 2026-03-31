@@ -26,6 +26,7 @@ const analyticsRoutes = require('./routes/analytics');
 const uploadRoutes = require('./routes/uploadRoutes');
 const recommendationsRoutes = require('./routes/recommendations');
 const locationsRoutes = require('./routes/locations');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -207,6 +208,9 @@ app.use('/api/v1/recommendations', recommendationsRoutes);
 
 // Mount location routes
 app.use('/api/v1/locations', locationsRoutes);
+
+// Mount users routes (public profiles)
+app.use('/api/v1/users', usersRoutes);
 
 // ==========================================
 // ERROR HANDLING

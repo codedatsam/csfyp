@@ -868,7 +868,8 @@ const getAvailableSlots = async (req, res) => {
         providerId,
         dayOfWeek,
         isAvailable: true
-      }
+      },
+      orderBy: { startTime: 'asc' }
     });
 
     // Get existing bookings for this date
@@ -883,27 +884,43 @@ const getAvailableSlots = async (req, res) => {
 
     const bookedSlots = existingBookings.map(b => b.timeSlot);
 
-    // Generate time slots (default if no availability set)
-    const defaultSlots = [
-      '09:00', '10:00', '11:00', '12:00', '13:00', 
-      '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
-    ];
+    // Determine opening and closing times
+    let openingTime = '09:00';
+    let closingTime = '18:00';
+    let isOpenToday = true;
 
-    let availableSlots;
     if (availability.length > 0) {
-      availableSlots = availability.map(a => a.startTime);
+      // Find earliest start time and latest end time
+      openingTime = availability.reduce((earliest, slot) => 
+        slot.startTime < earliest ? slot.startTime : earliest, 
+        availability[0].startTime
+      );
+      closingTime = availability.reduce((latest, slot) => 
+        slot.endTime > latest ? slot.endTime : latest, 
+        availability[0].endTime
+      );
     } else {
-      availableSlots = defaultSlots;
+      // Check if provider has ANY availability set for any day
+      const anyAvailability = await prisma.availability.findFirst({
+        where: { providerId }
+      });
+      
+      // If they have set availability for other days but not this day, they're closed
+      if (anyAvailability) {
+        isOpenToday = false;
+      }
+      // If no availability set at all, use defaults (9-18)
     }
-
-    // Filter out booked slots
-    const freeSlots = availableSlots.filter(slot => !bookedSlots.includes(slot));
 
     return okResponse(res, 'Available slots retrieved successfully', {
       date,
       dayOfWeek,
-      availableSlots: freeSlots,
-      bookedSlots
+      isOpenToday,
+      openingTime,
+      closingTime,
+      bookedSlots,
+      // For backward compatibility, still include available slots
+      availableSlots: isOpenToday ? [] : [] // Empty - client will enter custom time
     });
   } catch (error) {
     console.error('Get available slots error:', error);

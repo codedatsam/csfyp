@@ -17,6 +17,7 @@ const {
   getProfile,
   updateProfile,
   changePassword,
+  changeRole,
   logout,
   requestPasswordReset,
   resetPassword,
@@ -90,6 +91,11 @@ router.patch('/profile', authenticate, updateProfileValidation, updateProfile);
 // @desc    Change user password
 // @access  Private
 router.post('/change-password', authenticate, changePasswordValidation, changePassword);
+
+// @route   POST /api/v1/auth/change-role
+// @desc    Change user role (CLIENT <-> PROVIDER)
+// @access  Private
+router.post('/change-role', authenticate, changeRole);
 
 // @route   POST /api/v1/auth/logout
 // @desc    Logout user (client-side token deletion)

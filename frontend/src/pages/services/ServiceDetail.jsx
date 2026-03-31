@@ -45,6 +45,13 @@ function ServiceDetail() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Provider availability
+  const [openingTime, setOpeningTime] = useState('09:00');
+  const [closingTime, setClosingTime] = useState('18:00');
+  const [isOpenToday, setIsOpenToday] = useState(true);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [timeError, setTimeError] = useState('');
 
   useEffect(() => {
     fetchService();
@@ -75,20 +82,58 @@ function ServiceDetail() {
   const fetchAvailableSlots = async () => {
     try {
       setLoadingSlots(true);
-      // Generate time slots (simplified - in production, check against existing bookings)
-      const slots = [];
-      for (let hour = 9; hour <= 18; hour++) {
-        slots.push(`${hour.toString().padStart(2, '0')}:00`);
-        if (hour < 18) {
-          slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      setTimeError('');
+      
+      // Fetch from API to get provider's actual availability
+      const response = await api.get(`/bookings/available-slots?providerId=${service.provider.id}&date=${selectedDate}`);
+      
+      if (response.success) {
+        const { openingTime: open, closingTime: close, isOpenToday: isOpen, bookedSlots: booked } = response.data;
+        setOpeningTime(open || '09:00');
+        setClosingTime(close || '18:00');
+        setIsOpenToday(isOpen !== false);
+        setBookedSlots(booked || []);
+        
+        if (!isOpen) {
+          setTimeError('Provider is not available on this day');
         }
       }
-      setAvailableSlots(slots);
     } catch (error) {
       console.error('Failed to fetch slots:', error);
+      // Fallback to defaults
+      setOpeningTime('09:00');
+      setClosingTime('18:00');
+      setIsOpenToday(true);
+      setBookedSlots([]);
     } finally {
       setLoadingSlots(false);
     }
+  };
+
+  // Validate time input
+  const validateTime = (time) => {
+    if (!time) return '';
+    
+    // Check if time is within opening hours
+    if (time < openingTime) {
+      return `Time must be after opening time (${openingTime})`;
+    }
+    if (time > closingTime) {
+      return `Time must be before closing time (${closingTime})`;
+    }
+    
+    // Check if time is already booked
+    if (bookedSlots.includes(time)) {
+      return 'This time slot is already booked';
+    }
+    
+    return '';
+  };
+
+  const handleTimeChange = (e) => {
+    const time = e.target.value;
+    setSelectedTime(time);
+    setTimeError(validateTime(time));
   };
 
   const handleBooking = async (e) => {
@@ -102,6 +147,18 @@ function ServiceDetail() {
 
     if (!selectedDate || !selectedTime) {
       toast.error('Please select a date and time');
+      return;
+    }
+
+    // Validate time before submitting
+    const error = validateTime(selectedTime);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (!isOpenToday) {
+      toast.error('Provider is not available on this day');
       return;
     }
 
@@ -365,22 +422,57 @@ function ServiceDetail() {
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-5 w-5 animate-spin text-primary-600" />
                         </div>
+                      ) : !isOpenToday ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                          <p className="text-red-600 font-medium">Provider is closed on this day</p>
+                          <p className="text-red-500 text-sm mt-1">Please select a different date</p>
+                        </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                          {availableSlots.map((slot) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedTime(slot)}
-                              className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                                selectedTime === slot
-                                  ? 'bg-primary-600 text-white border-primary-600'
-                                  : 'border-gray-200 hover:border-primary-300'
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
+                        <div className="space-y-3">
+                          {/* Opening Hours Info */}
+                          <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
+                            <p className="text-primary-800 text-sm font-medium">
+                              📍 Available Hours
+                            </p>
+                            <p className="text-primary-700 text-lg font-bold">
+                              {openingTime} - {closingTime}
+                            </p>
+                          </div>
+                          
+                          {/* Custom Time Input */}
+                          <input
+                            type="time"
+                            value={selectedTime}
+                            onChange={handleTimeChange}
+                            min={openingTime}
+                            max={closingTime}
+                            className={`input w-full text-lg ${timeError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                            required
+                          />
+                          
+                          {/* Time Error */}
+                          {timeError && (
+                            <p className="text-red-500 text-sm">{timeError}</p>
+                          )}
+                          
+                          {/* Booked Slots Warning */}
+                          {bookedSlots.length > 0 && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                              <p className="text-yellow-800 text-sm font-medium mb-1">
+                                ⚠️ Already booked times:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {bookedSlots.map((slot) => (
+                                  <span 
+                                    key={slot}
+                                    className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium"
+                                  >
+                                    {slot}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -413,7 +505,7 @@ function ServiceDetail() {
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={booking || !selectedDate || !selectedTime}
+                    disabled={booking || !selectedDate || !selectedTime || timeError || !isOpenToday}
                     className="btn btn-primary w-full"
                   >
                     {booking ? (
